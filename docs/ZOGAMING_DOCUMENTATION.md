@@ -368,6 +368,39 @@ npm run db:studio
 
 ---
 
-## 📜 License
+## � CLI Deploy Scripts
+
+### Quick Push (tanpa build test)
+```powershell
+# PowerShell
+.\push.ps1 -m "pesan commit"
+```
+
+### Full Deploy (build + push)
+```powershell
+# PowerShell
+.\deploy.ps1 -m "pesan commit"
+
+# Atau via npm
+npm run deploy
+```
+
+### Windows Batch
+```cmd
+deploy.bat "pesan commit"
+```
+
+### Manual Push
+```bash
+git add -A
+git commit -m "pesan commit"
+git push origin main
+```
+
+> **Note:** Vercel otomatis deploy setiap kali push ke branch `main` di GitHub.
+
+---
+
+## �📜 License
 
 Private project - ZOGAMING © 2026
