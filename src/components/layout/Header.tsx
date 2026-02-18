@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useData } from '@/lib/DataContext';
 import { formatRupiah } from '@/lib/types';
 
@@ -14,12 +14,51 @@ const navLinks = [
     { href: '/contact', label: 'Contact Us' },
 ];
 
+interface AuthUser {
+    id: string;
+    name: string;
+    email: string;
+    role: 'admin' | 'customer';
+}
+
 export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [user, setUser] = useState<AuthUser | null>(null);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
     const { cart, removeFromCart, updateCartQuantity, clearCart } = useData();
+
+    const checkAuth = useCallback(async () => {
+        try {
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+                const data = await res.json();
+                setUser(data.user);
+            } else {
+                setUser(null);
+            }
+        } catch {
+            setUser(null);
+        }
+    }, []);
+
+    useEffect(() => {
+        checkAuth();
+    }, [checkAuth, pathname]);
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            setUser(null);
+            setIsUserMenuOpen(false);
+            router.push('/');
+        } catch {
+            // ignore
+        }
+    };
 
     const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
     const cartTotal = cart.reduce((sum, item) => sum + (item.product.salePrice || item.product.price) * item.quantity, 0);
@@ -94,6 +133,63 @@ export default function Header() {
                                     Admin
                                 </Link>
                             </li>
+                            {/* Auth Buttons */}
+                            {user ? (
+                                <li className="relative">
+                                    <button
+                                        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light text-white hover:bg-white/10 transition-all duration-300"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                            <circle cx="12" cy="7" r="4" />
+                                        </svg>
+                                        {user.name}
+                                    </button>
+                                    {isUserMenuOpen && (
+                                        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl overflow-hidden z-50">
+                                            <div className="px-4 py-3 border-b border-gray-100">
+                                                <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
+                                                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                            </div>
+                                            {user.role === 'admin' && (
+                                                <Link
+                                                    href="/admin"
+                                                    onClick={() => setIsUserMenuOpen(false)}
+                                                    className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    Admin Dashboard
+                                                </Link>
+                                            )}
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                            >
+                                                Logout
+                                            </button>
+                                        </div>
+                                    )}
+                                </li>
+                            ) : (
+                                <>
+                                    <li>
+                                        <Link
+                                            href="/auth/login"
+                                            className="px-5 py-2 rounded-full text-sm font-light text-white hover:bg-white/10 transition-all duration-300"
+                                        >
+                                            Login
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link
+                                            href="/auth/register"
+                                            className="px-5 py-2 rounded-full text-sm font-medium text-[#010101] bg-white hover:bg-gray-100 transition-all duration-300"
+                                        >
+                                            Register
+                                        </Link>
+                                    </li>
+                                </>
+                            )}
                         </ul>
 
                         {/* Mobile: Cart + Menu Button */}
@@ -154,6 +250,43 @@ export default function Header() {
                                     Admin Dashboard
                                 </Link>
                             </li>
+                            {user ? (
+                                <>
+                                    <li className="border-t border-gray-100 px-6 py-3 bg-gray-50">
+                                        <p className="text-sm font-semibold text-gray-900">{user.name}</p>
+                                        <p className="text-xs text-gray-500">{user.email}</p>
+                                    </li>
+                                    <li className="border-t border-gray-100">
+                                        <button
+                                            onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                                            className="block w-full text-left px-6 py-4 text-sm font-medium text-red-500 hover:bg-red-50"
+                                        >
+                                            Logout
+                                        </button>
+                                    </li>
+                                </>
+                            ) : (
+                                <>
+                                    <li className="border-t border-gray-100">
+                                        <Link
+                                            href="/auth/login"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="block px-6 py-4 text-sm font-medium text-gray-800 hover:text-[#ee626b]"
+                                        >
+                                            Login
+                                        </Link>
+                                    </li>
+                                    <li className="border-t border-gray-100">
+                                        <Link
+                                            href="/auth/register"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="block px-6 py-4 text-sm font-medium text-[#ee626b] hover:bg-gray-50"
+                                        >
+                                            Register
+                                        </Link>
+                                    </li>
+                                </>
+                            )}
                         </ul>
                     </div>
                 </div>

@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== CUSTOMER AUTH ====================
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+
+  @@map("customers")
+}
+
+// ==================== ORDERS ====================
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  productId       String
+  productName     String
+  productPrice    Int
+  quantity        Int           @default(1)
+  total           Int
+  status          OrderStatus   @default(PENDING)
+  paymentMethod   PaymentMethod?
+  paymentStatus   PaymentStatus @default(WAITING)
+  paymentExpiry   DateTime?
+  paidAt          DateTime?
+  accountEmail    String?
+  accountPassword String?
+  deliveredAt     DateTime?
+  deliveryMethod  String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("orders")
+}
+
+// ==================== PAYMENT SETTINGS ====================
+model PaymentSetting {
+  id           String  @id @default(cuid())
+  method       String  @unique
+  label        String
+  enabled      Boolean @default(true)
+  qrisImage    String?
+  bankName     String?
+  vaNumber     String?
+  accountName  String?
+  gopayNumber  String?
+  gopayName    String?
+  instructions String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("payment_settings")
+}
+
+// ==================== SITE CONFIG ====================
+model SiteConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("site_config")
+}
+
+// ==================== ENUMS ====================
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  QRIS
+  VA
+  GOPAY
+}
+
+enum PaymentStatus {
+  WAITING
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+}
