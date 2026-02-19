@@ -49,10 +49,10 @@ const defaultSettings: SiteSettings = {
     heroSubtitle: 'Welcome to ZOGAMING',
     heroDescription: 'ZOGAMING is your ultimate destination for the best video games. Browse our collection of action, adventure, strategy, and racing games.',
     bannerImages: [
-        { id: 'bi1', title: 'TOP SELLER', imageUrl: '/images/banner-bg.jpg', badge: 'best-seller', badgeColor: '#ef4444', badgeTextColor: '#ffffff', active: true },
-        { id: 'bi2', title: 'COMING SOON', imageUrl: '/images/banner-image.jpg', badge: 'pre-order', badgeColor: '#3b82f6', badgeTextColor: '#ffffff', active: true },
-        { id: 'bi3', title: 'NEW RELEASE', imageUrl: '/images/page-heading-bg.jpg', badge: 'new-release', badgeColor: '#10b981', badgeTextColor: '#ffffff', active: true },
-        { id: 'bi4', title: 'PRE-ORDER NOW', imageUrl: '/images/cta-bg.jpg', badge: 'pre-order', badgeColor: '#f59e0b', badgeTextColor: '#000000', active: true },
+        { id: 'bi1', title: 'TOP SELLER', imageUrl: '/images/Resident-Evil-Requiem.jpg', badge: 'best-seller', badgeColor: '#ef4444', badgeTextColor: '#ffffff', active: true },
+        { id: 'bi2', title: 'BEST SELLER', imageUrl: '/images/trending-02.jpg', badge: 'best-seller', badgeColor: '#3b82f6', badgeTextColor: '#ffffff', active: true },
+        { id: 'bi3', title: 'NEW RELEASE', imageUrl: '/images/trending-03.jpg', badge: 'new-release', badgeColor: '#10b981', badgeTextColor: '#ffffff', active: true },
+        { id: 'bi4', title: 'PRE-ORDER NOW', imageUrl: '/images/trending-04.jpg', badge: 'pre-order', badgeColor: '#f59e0b', badgeTextColor: '#000000', active: true },
     ],
     socialLinks: {
         facebook: '#',
