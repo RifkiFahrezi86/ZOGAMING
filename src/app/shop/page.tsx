@@ -47,7 +47,7 @@ export default function ShopPage() {
                             Home
                         </Link>
                         <span>&gt;</span>
-                        <span className="text-white">Our Shops</span>
+                        <span className="text-white">Our Shop</span>
                     </nav>
                 </div>
             </section>
