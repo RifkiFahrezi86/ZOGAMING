@@ -119,7 +119,7 @@ Setelah redeploy berhasil, kita perlu mengisi database dengan data awal (produk,
 ### Cara 1: Lewat Browser
 Buka link ini di browser (ganti `your-domain` dengan domain Vercel kamu):
 ```
-https://your-domain.vercel.app/api/seed
+https://zogaming.vercel.app/api/seed
 ```
 Tambahkan ini di address bar, lalu tekan Enter. Kamu akan melihat halaman kosong/JSON. Itu normal.
 
