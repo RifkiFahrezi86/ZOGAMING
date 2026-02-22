@@ -11,14 +11,13 @@
         </clipPath>
     </defs>
     
-    <!-- Logo Mark -->
+    <!-- Logo Mark - no white background, only red triangles -->
     <g mask="url(#x-gap)" clip-path="url(#circle-clip)">
-        <circle cx="25" cy="25" r="25" fill="white"/>
         <polygon points="25,25 0,0 50,0" fill="#EE626B"/>
         <polygon points="25,25 0,50 50,50" fill="#EE626B"/>
     </g>
     
-    <!-- ZOGAMING text as paths for consistent rendering -->
+    <!-- ZOGAMING text as paths -->
     <g fill="white" transform="translate(58, 12)">
         <!-- Z -->
         <path d="M0,0 L18,0 L18,5 L7,21 L18,21 L18,26 L0,26 L0,21 L11,5 L0,5 Z"/>
