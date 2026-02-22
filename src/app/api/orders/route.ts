@@ -108,22 +108,6 @@ export async function POST(request: Request) {
     let assignedAdminId: number | null = null;
     let assignedAdminPhone: string | null = null;
     try {
-      // Ensure admins table exists
-      await sql`
-        CREATE TABLE IF NOT EXISTS admins (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          whatsapp VARCHAR(50) NOT NULL,
-          active BOOLEAN DEFAULT true,
-          sort_order INTEGER DEFAULT 0,
-          created_at TIMESTAMP DEFAULT NOW()
-        )
-      `;
-      // Ensure assigned_admin_id column exists
-      try {
-        await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_admin_id INTEGER`;
-      } catch { /* column exists */ }
-
       const activeAdmins = await sql`SELECT id, whatsapp FROM admins WHERE active = true ORDER BY sort_order, id`;
       
       if (activeAdmins.length > 0) {

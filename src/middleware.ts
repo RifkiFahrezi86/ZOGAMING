@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
 // Simple in-memory rate limiter for middleware
 const ipRequestCounts = new Map<string, { count: number; resetTime: number }>();
@@ -18,9 +19,17 @@ if (typeof globalThis !== 'undefined') {
 }
 
 function getIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() 
-    || request.headers.get('x-real-ip') 
-    || 'unknown';
+  // Prefer x-real-ip (set by trusted reverse proxy)
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp && /^[\d.:a-fA-F]+$/.test(realIp)) return realIp.trim();
+  
+  // x-forwarded-for: take rightmost (closest to proxy)
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const parts = forwarded.split(',').map(s => s.trim()).filter(s => /^[\d.:a-fA-F]+$/.test(s));
+    if (parts.length > 0) return parts[parts.length - 1];
+  }
+  return 'unknown';
 }
 
 function isRateLimited(ip: string, maxRequests: number, windowMs: number): boolean {
@@ -37,7 +46,7 @@ function isRateLimited(ip: string, maxRequests: number, windowMs: number): boole
   return entry.count > maxRequests;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = getIp(request);
 
@@ -110,18 +119,54 @@ export function middleware(request: NextRequest) {
   }
 
   // =============================================
-  // 4. Protect admin routes (client-side check, real auth is in API)
+  // 4. Protect admin routes - verify JWT and admin role
   // =============================================
   if (pathname.startsWith('/admin') && !pathname.startsWith('/api/admin')) {
-    // This is just a basic check - real auth is enforced in API routes
     const token = request.cookies.get('auth_token')?.value;
     if (!token) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
+    // Verify JWT and check admin role
+    try {
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        // In dev without JWT_SECRET, allow (real auth in API routes)
+        // In production this should never happen since auth.ts throws on startup
+      } else {
+        const key = new TextEncoder().encode(secret);
+        const { payload } = await jwtVerify(token, key);
+        if (payload.role !== 'admin') {
+          return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
+      }
+    } catch {
+      // Invalid/expired token - redirect to login
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      response.cookies.delete('auth_token');
+      return response;
+    }
   }
 
   // =============================================
-  // 5. Add security headers to response
+  // 5. CSRF protection for state-changing API requests
+  // =============================================
+  if (pathname.startsWith('/api/') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+    const contentType = request.headers.get('content-type') || '';
+    const xRequested = request.headers.get('x-requested-with');
+    // Allow requests with JSON content type or x-requested-with header (not sent by HTML forms)
+    // This blocks cross-origin form submissions
+    if (!contentType.includes('application/json') && !xRequested) {
+      // Allow multipart/form-data for file uploads from same origin
+      const origin = request.headers.get('origin');
+      const host = request.headers.get('host');
+      if (origin && host && !origin.includes(host)) {
+        return NextResponse.json({ error: 'CSRF check failed' }, { status: 403 });
+      }
+    }
+  }
+
+  // =============================================
+  // 6. Add security headers to response
   // =============================================
   const response = NextResponse.next();
   
@@ -131,6 +176,9 @@ export function middleware(request: NextRequest) {
   response.headers.set('X-Frame-Options', 'DENY');
   // XSS protection
   response.headers.set('X-XSS-Protection', '1; mode=block');
+  // Cross-Origin isolation headers
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
   
   return response;
 }

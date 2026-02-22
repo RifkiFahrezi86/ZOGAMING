@@ -108,6 +108,15 @@ export function validatePassword(password: string): { valid: boolean; error?: st
   if (!/[0-9]/.test(password)) {
     return { valid: false, error: 'Password harus mengandung minimal 1 angka' };
   }
+  // Require at least one special character
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)) {
+    return { valid: false, error: 'Password harus mengandung minimal 1 karakter spesial (!@#$%^&*...)' };
+  }
+  // Block common weak passwords
+  const common = ['password', '12345678', 'qwerty123', 'admin123', 'letmein1', 'welcome1', 'monkey123', 'dragon123', 'master123', 'abc12345'];
+  if (common.includes(password.toLowerCase())) {
+    return { valid: false, error: 'Password terlalu umum, gunakan password yang lebih kuat' };
+  }
   return { valid: true };
 }
 
@@ -130,14 +139,20 @@ export function sanitizeId(id: string | number): number | null {
 
 /**
  * Extract client IP from request for rate limiting
+ * Prefers x-real-ip (set by trusted proxies like Vercel/Cloudflare) over x-forwarded-for
  */
 export function getClientIp(request: Request): string {
+  // x-real-ip is set by the actual reverse proxy (more trustworthy)
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp && /^[\d.:a-fA-F]+$/.test(realIp)) return realIp.trim();
+  
+  // x-forwarded-for can be spoofed, take rightmost (closest proxy)
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    const parts = forwarded.split(',').map(s => s.trim()).filter(s => /^[\d.:a-fA-F]+$/.test(s));
+    // Rightmost IP is typically set by the trusted proxy
+    if (parts.length > 0) return parts[parts.length - 1];
   }
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) return realIp;
   return 'unknown';
 }
 

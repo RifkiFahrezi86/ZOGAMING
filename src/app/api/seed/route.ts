@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { encryptPassword } from '@/lib/crypto';
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/security';
 import { getAuthUser } from '@/lib/auth';
+import { randomBytes } from 'crypto';
 import productsData from '@/data/products.json';
 import categoriesData from '@/data/categories.json';
 import badgesData from '@/data/badges.json';
@@ -16,11 +17,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden: hanya admin yang dapat menjalankan seed' }, { status: 403 });
     }
     // Allow unauthenticated only if no admin user exists yet (first-time setup)
+    // AND a valid SEED_SECRET is provided
     if (!user) {
       const sql = getDb();
       const existingAdmins = await sql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`;
       if (existingAdmins.length > 0) {
         return NextResponse.json({ error: 'Unauthorized: login sebagai admin untuk menjalankan seed' }, { status: 401 });
+      }
+      // For first-time setup, require SEED_SECRET if set in env
+      const seedSecret = process.env.SEED_SECRET;
+      if (seedSecret) {
+        const body = await request.clone().json().catch(() => ({}));
+        const providedSecret = request.headers.get('x-seed-secret') || body.seedSecret;
+        if (providedSecret !== seedSecret) {
+          return NextResponse.json({ error: 'Invalid seed secret' }, { status: 403 });
+        }
       }
     }
 
@@ -36,15 +47,18 @@ export async function POST(request: Request) {
     // Ensure password_enc column exists
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_enc TEXT DEFAULT ''`;
 
-    // 1. Create admin user (password: admin123)
-    const adminPassword = 'admin123';
+    // 1. Create admin user with cryptographically random password
+    const adminPassword = randomBytes(12).toString('base64url').slice(0, 16);
     const adminHash = await bcrypt.hash(adminPassword, 12);
-    const adminEnc = encryptPassword(adminPassword);
+    let adminEnc = '';
+    try { adminEnc = encryptPassword(adminPassword); } catch { /* encryption optional */ }
     await sql`
       INSERT INTO users (name, email, password_hash, password_enc, phone, role)
       VALUES ('Admin', 'admin@zogaming.com', ${adminHash}, ${adminEnc}, '', 'admin')
-      ON CONFLICT (email) DO UPDATE SET password_enc = ${adminEnc}
+      ON CONFLICT (email) DO NOTHING
     `;
+    // Store generated password to return once
+    const isNewAdmin = (await sql`SELECT id FROM users WHERE email = 'admin@zogaming.com' AND password_hash = ${adminHash}`).length > 0;
 
     // 2. Seed categories
     for (const cat of categoriesData) {
@@ -147,10 +161,20 @@ export async function POST(request: Request) {
     await sql`CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id)`;
 
-    return NextResponse.json({ 
+    const responseData: Record<string, unknown> = { 
       message: 'Database seeded successfully!',
-      info: 'Default admin: admin@zogaming.com — ubah password setelah login pertama',
-    });
+    };
+    // Only show generated password once for new admin
+    if (isNewAdmin) {
+      responseData.adminCredentials = {
+        email: 'admin@zogaming.com',
+        password: adminPassword,
+        warning: 'SIMPAN PASSWORD INI! Tidak akan ditampilkan lagi. Segera ubah setelah login.',
+      };
+    } else {
+      responseData.info = 'Admin sudah ada, password tidak diubah.';
+    }
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Seed error:', error);
     return NextResponse.json({ error: 'Seed gagal. Periksa konfigurasi database.' }, { status: 500 });

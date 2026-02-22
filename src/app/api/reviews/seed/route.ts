@@ -257,6 +257,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Review seed error:', error);
-    return NextResponse.json({ error: 'Seed failed', details: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Seed failed' }, { status: 500 });
   }
 }

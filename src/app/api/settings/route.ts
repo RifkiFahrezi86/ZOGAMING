@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeString, sanitizeInput } from '@/lib/security';
 
 export async function GET() {
   try {
@@ -70,13 +71,32 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const sql = getDb();
 
-    // Save settings as key-value pairs
+    // Save settings as key-value pairs (with sanitization)
     const keys = ['siteName', 'logo', 'address', 'phone', 'email', 'heroTitle', 'heroSubtitle', 'heroDescription', 'socialLinks', 'adminWhatsApp', 'promoProductId', 'promoTitle', 'promoActive'];
+    const stringKeys = ['siteName', 'address', 'phone', 'email', 'heroTitle', 'heroSubtitle', 'heroDescription', 'adminWhatsApp', 'promoProductId', 'promoTitle'];
+    const urlKeys = ['logo'];
     for (const key of keys) {
       if (body[key] !== undefined) {
+        let sanitized = body[key];
+        if (stringKeys.includes(key) && typeof sanitized === 'string') {
+          sanitized = sanitizeInput(sanitized).slice(0, 500);
+        } else if (urlKeys.includes(key) && typeof sanitized === 'string') {
+          sanitized = sanitizeString(sanitized, 500);
+          // Only allow relative paths or https URLs
+          if (!sanitized.startsWith('/') && !sanitized.startsWith('https://')) {
+            sanitized = '/images/logo.svg';
+          }
+        } else if (key === 'socialLinks' && typeof sanitized === 'object') {
+          // Sanitize each social link URL
+          for (const sk of Object.keys(sanitized)) {
+            if (typeof sanitized[sk] === 'string') {
+              sanitized[sk] = sanitizeString(sanitized[sk], 500);
+            }
+          }
+        }
         await sql`
-          INSERT INTO settings (key, value) VALUES (${key}, ${JSON.stringify(body[key])})
-          ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(body[key])}
+          INSERT INTO settings (key, value) VALUES (${key}, ${JSON.stringify(sanitized)})
+          ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(sanitized)}
         `;
       }
     }

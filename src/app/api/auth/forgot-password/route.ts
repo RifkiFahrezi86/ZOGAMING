@@ -3,12 +3,14 @@ import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { encryptPassword } from '@/lib/crypto';
 import { checkRateLimit, getClientIp, sanitizeEmail, RATE_LIMITS } from '@/lib/security';
+import { randomBytes } from 'crypto';
 
 function generateTempPassword(): string {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const bytes = randomBytes(10);
   let result = '';
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < 10; i++) {
+    result += chars.charAt(bytes[i] % chars.length);
   }
   return result;
 }
@@ -44,25 +46,24 @@ export async function POST(request: Request) {
     const user = users[0];
 
     if (!user.phone) {
+      // Don't reveal whether the account exists or has a phone number
       return NextResponse.json({ 
-        error: 'Akun ini tidak memiliki nomor WhatsApp. Hubungi admin untuk reset password.' 
-      }, { status: 400 });
+        message: 'Jika email terdaftar dan memiliki nomor WhatsApp, password baru akan dikirim via WhatsApp.' 
+      });
     }
 
     // Generate temp password
     const tempPassword = generateTempPassword();
     const hash = await bcrypt.hash(tempPassword, 12);
-    const enc = encryptPassword(tempPassword);
+    let enc = '';
+    try { enc = encryptPassword(tempPassword); } catch { /* encryption optional */ }
 
-    // Update password in database
-    await sql`UPDATE users SET password_hash = ${hash}, password_enc = ${enc} WHERE id = ${user.id}`;
-
-    // Send via WhatsApp using Fonnte
+    // Send via WhatsApp using Fonnte BEFORE updating the password
     const fonnteToken = process.env.FONNTE_TOKEN;
     if (fonnteToken) {
       const message = `*ZOGAMING - Reset Password*\n\nHalo ${user.name},\n\nPassword akun kamu telah direset.\n\nEmail: ${user.email}\nPassword Baru: *${tempPassword}*\n\nSegera login dan ubah password kamu di menu Dashboard.\n\nJika kamu tidak meminta reset password, segera hubungi admin.`;
 
-      await fetch('https://api.fonnte.com/send', {
+      const sendResult = await fetch('https://api.fonnte.com/send', {
         method: 'POST',
         headers: {
           'Authorization': fonnteToken,
@@ -73,7 +74,15 @@ export async function POST(request: Request) {
           message: message,
         }),
       });
+
+      // Only update password if WhatsApp message was sent successfully
+      if (!sendResult.ok) {
+        return NextResponse.json({ error: 'Gagal mengirim pesan WhatsApp. Password tidak diubah.' }, { status: 500 });
+      }
     }
+
+    // Update password in database (only after successful delivery)
+    await sql`UPDATE users SET password_hash = ${hash}${enc ? sql`, password_enc = ${enc}` : sql``} WHERE id = ${user.id}`;
 
     return NextResponse.json({ 
       message: 'Password baru telah dikirim ke WhatsApp yang terdaftar.' 

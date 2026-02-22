@@ -18,7 +18,7 @@ function getEncryptionKey(): Buffer {
       throw new Error('FATAL: ENCRYPTION_KEY environment variable is required in production!');
     }
     console.warn('WARNING: ENCRYPTION_KEY not set. Password encryption will use a dev-only key.');
-    _encryptionKeyCache = scryptSync('dev-only-insecure-key', randomBytes(16).toString('hex'), KEY_LENGTH);
+    _encryptionKeyCache = scryptSync('dev-only-insecure-key', 'zogaming-dev-salt-v1', KEY_LENGTH);
     return _encryptionKeyCache;
   }
   

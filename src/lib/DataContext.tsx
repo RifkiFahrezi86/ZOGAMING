@@ -93,8 +93,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         refreshData();
         // Load cart from localStorage (cart is browser-specific)
-        const storedCart = localStorage.getItem('lugx_cart');
-        if (storedCart) setCart(JSON.parse(storedCart));
+        try {
+          const storedCart = localStorage.getItem('lugx_cart');
+          if (storedCart) {
+            const parsed = JSON.parse(storedCart);
+            // Validate cart data structure
+            if (Array.isArray(parsed) && parsed.every((item: unknown) => 
+              typeof item === 'object' && item !== null && 
+              'id' in item && 'name' in item && 'price' in item && 'quantity' in item &&
+              typeof (item as Record<string, unknown>).price === 'number' &&
+              typeof (item as Record<string, unknown>).quantity === 'number'
+            )) {
+              setCart(parsed);
+            } else {
+              localStorage.removeItem('lugx_cart');
+            }
+          }
+        } catch {
+          localStorage.removeItem('lugx_cart');
+        }
     }, [refreshData]);
 
     // Save cart to localStorage
