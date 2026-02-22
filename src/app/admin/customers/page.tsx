@@ -65,6 +65,7 @@ export default function AdminCustomersPage() {
   const [resetMessage, setResetMessage] = useState('');
   const [editCustomerId, setEditCustomerId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const [editMessage, setEditMessage] = useState('');
@@ -123,6 +124,7 @@ export default function AdminCustomersPage() {
   const openEditCustomer = (customer: Customer | CustomerDetail) => {
     setEditCustomerId(customer.id);
     setEditName(customer.name);
+    setEditEmail(customer.email);
     setEditPhone(customer.phone || '');
     setEditMessage('');
   };
@@ -136,15 +138,15 @@ export default function AdminCustomersPage() {
       const res = await fetch(`/api/customers/${editCustomerId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName.trim(), phone: editPhone.trim() }),
+        body: JSON.stringify({ name: editName.trim(), email: editEmail.trim(), phone: editPhone.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
         setEditMessage('Berhasil diperbarui!');
         // Update local state
-        setCustomers(prev => prev.map(c => c.id === editCustomerId ? { ...c, name: editName.trim(), phone: editPhone.trim() } : c));
+        setCustomers(prev => prev.map(c => c.id === editCustomerId ? { ...c, name: editName.trim(), email: editEmail.trim(), phone: editPhone.trim() } : c));
         if (selectedCustomer?.id === editCustomerId) {
-          setSelectedCustomer({ ...selectedCustomer, name: editName.trim(), phone: editPhone.trim() });
+          setSelectedCustomer({ ...selectedCustomer, name: editName.trim(), email: editEmail.trim(), phone: editPhone.trim() });
         }
         setTimeout(() => { setEditCustomerId(null); setEditMessage(''); }, 1500);
       } else {
@@ -606,6 +608,10 @@ export default function AdminCustomersPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Nama</label>
                 <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nama customer" className="w-full h-11 px-4 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-[#ee626b] focus:outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="email@example.com" className="w-full h-11 px-4 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-[#ee626b] focus:outline-none" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">No. WhatsApp</label>

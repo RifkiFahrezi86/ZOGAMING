@@ -73,7 +73,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await request.json();
-    const { name, phone } = body;
+    const { name, email, phone } = body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'Nama tidak boleh kosong' }, { status: 400 });
@@ -90,11 +90,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Cannot edit admin account from here' }, { status: 403 });
     }
 
-    // Update name (and phone if provided)
-    if (phone !== undefined) {
-      await sql`UPDATE users SET name = ${name.trim()}, phone = ${phone.trim()} WHERE id = ${parseInt(id)}`;
+    // Check email uniqueness if changed
+    if (email && typeof email === 'string' && email.trim().length > 0) {
+      const existing = await sql`SELECT id FROM users WHERE email = ${email.trim()} AND id != ${parseInt(id)}`;
+      if (existing.length > 0) {
+        return NextResponse.json({ error: 'Email sudah digunakan oleh akun lain' }, { status: 400 });
+      }
+      await sql`UPDATE users SET name = ${name.trim()}, email = ${email.trim()}, phone = ${(phone || '').trim()} WHERE id = ${parseInt(id)}`;
     } else {
-      await sql`UPDATE users SET name = ${name.trim()} WHERE id = ${parseInt(id)}`;
+      await sql`UPDATE users SET name = ${name.trim()}, phone = ${(phone || '').trim()} WHERE id = ${parseInt(id)}`;
     }
 
     return NextResponse.json({ message: 'Customer updated successfully' });
