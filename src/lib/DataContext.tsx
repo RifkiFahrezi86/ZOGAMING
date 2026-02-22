@@ -54,6 +54,9 @@ const defaultSettings: SiteSettings = {
         twitter: '#',
         instagram: '#',
     },
+    promoProductId: '',
+    promoTitle: 'DEAL OF THE DAY',
+    promoActive: true,
 };
 
 export function DataProvider({ children }: { children: ReactNode }) {

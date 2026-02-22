@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useState } from 'react';
 
@@ -40,6 +39,11 @@ const navItems = [
         href: '/admin/banner-videos',
         label: 'Banners',
         icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+    },
+    {
+        href: '/admin/promo',
+        label: 'Promo',
+        icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
     },
     {
         href: '/admin/admins',
@@ -97,7 +101,33 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#1e293b] border-r border-slate-700/50 transform transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                 <div className="flex items-center h-16 px-6 border-b border-slate-700/50">
                     <Link href="/" className="flex items-center gap-3">
-                        <Image src="/images/logo.svg" alt="ZOGAMING" width={120} height={24} />
+                        <svg width={120} height={24} viewBox="0 0 250 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <mask id="admin-logo-x-gap">
+                                    <circle cx="25" cy="25" r="25" fill="white"/>
+                                    <path d="M0 0 L50 50" stroke="black" strokeWidth="6"/>
+                                    <path d="M50 0 L0 50" stroke="black" strokeWidth="6"/>
+                                </mask>
+                                <clipPath id="admin-logo-circle-clip">
+                                    <circle cx="25" cy="25" r="23"/>
+                                </clipPath>
+                            </defs>
+                            <g mask="url(#admin-logo-x-gap)" clipPath="url(#admin-logo-circle-clip)">
+                                <circle cx="25" cy="25" r="25" fill="white"/>
+                                <polygon points="25,25 0,0 50,0" fill="#EE626B"/>
+                                <polygon points="25,25 0,50 50,50" fill="#EE626B"/>
+                            </g>
+                            <g fill="white" transform="translate(58, 12)">
+                                <path d="M0,0 L18,0 L18,5 L7,21 L18,21 L18,26 L0,26 L0,21 L11,5 L0,5 Z"/>
+                                <path d="M22,0 L38,0 Q42,0 42,4 L42,22 Q42,26 38,26 L26,26 Q22,26 22,22 L22,4 Q22,0 26,0 Z M28,5 L28,21 L36,21 L36,5 Z"/>
+                                <path d="M46,0 L62,0 L62,5 L52,5 L52,21 L62,21 L62,15 L56,15 L56,11 L68,11 L68,22 Q68,26 64,26 L50,26 Q46,26 46,22 L46,4 Q46,0 50,0 Z"/>
+                                <path d="M72,0 L88,0 Q92,0 92,4 L92,26 L86,26 L86,17 L78,17 L78,26 L72,26 L72,4 Q72,0 76,0 Z M78,5 L78,12 L86,12 L86,5 Z"/>
+                                <path d="M96,0 L104,0 L108,10 L112,0 L120,0 L120,26 L114,26 L114,10 L110,18 L106,18 L102,10 L102,26 L96,26 Z"/>
+                                <path d="M124,0 L130,0 L130,26 L124,26 Z"/>
+                                <path d="M134,0 L140,0 L150,16 L150,0 L156,0 L156,26 L150,26 L140,10 L140,26 L134,26 Z"/>
+                                <path d="M160,0 L176,0 L176,5 L166,5 L166,21 L176,21 L176,15 L170,15 L170,11 L182,11 L182,22 Q182,26 178,26 L164,26 Q160,26 160,22 L160,4 Q160,0 164,0 Z"/>
+                            </g>
+                        </svg>
                     </Link>
                 </div>
 

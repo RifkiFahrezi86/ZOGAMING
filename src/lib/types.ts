@@ -67,6 +67,9 @@ export interface SiteSettings {
     instagram?: string;
   };
   adminWhatsApp?: string;
+  promoProductId?: string;
+  promoTitle?: string;
+  promoActive?: boolean;
 }
 
 // Currency helper

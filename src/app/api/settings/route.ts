@@ -33,6 +33,9 @@ export async function GET() {
       heroSubtitle: result.heroSubtitle || 'Welcome to ZOGAMING',
       heroDescription: result.heroDescription || '',
       adminWhatsApp: result.adminWhatsApp || '',
+      promoProductId: result.promoProductId || '',
+      promoTitle: result.promoTitle || 'DEAL OF THE DAY',
+      promoActive: result.promoActive !== undefined ? result.promoActive : true,
       bannerImages,
       socialLinks: result.socialLinks || { facebook: '#', twitter: '#', instagram: '#' },
     });
@@ -48,6 +51,9 @@ export async function GET() {
       heroSubtitle: 'Welcome to ZOGAMING',
       heroDescription: '',
       adminWhatsApp: '',
+      promoProductId: '',
+      promoTitle: 'DEAL OF THE DAY',
+      promoActive: true,
       bannerImages: [],
       socialLinks: {},
     });
@@ -65,7 +71,7 @@ export async function PUT(request: Request) {
     const sql = getDb();
 
     // Save settings as key-value pairs
-    const keys = ['siteName', 'logo', 'address', 'phone', 'email', 'heroTitle', 'heroSubtitle', 'heroDescription', 'socialLinks', 'adminWhatsApp'];
+    const keys = ['siteName', 'logo', 'address', 'phone', 'email', 'heroTitle', 'heroSubtitle', 'heroDescription', 'socialLinks', 'adminWhatsApp', 'promoProductId', 'promoTitle', 'promoActive'];
     for (const key of keys) {
       if (body[key] !== undefined) {
         await sql`

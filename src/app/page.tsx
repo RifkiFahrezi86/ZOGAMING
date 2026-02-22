@@ -59,8 +59,13 @@ export default function HomePage() {
   const totalProducts = products.length;
   const avgRating = products.length > 0 ? (products.reduce((sum, p) => sum + (p.rating || 0), 0) / products.length) : 0;
   
-  // Sale product for "Deal of the Day"
-  const dealProduct = products.find(p => p.salePrice && p.salePrice < p.price);
+  // Deal of the Day - from admin promo settings, fallback to first sale product
+  const dealProduct = settings.promoActive !== false
+    ? (settings.promoProductId
+        ? products.find(p => p.id === settings.promoProductId)
+        : products.find(p => p.salePrice && p.salePrice < p.price))
+    : null;
+  const promoTitle = settings.promoTitle || 'DEAL OF THE DAY';
 
   const platforms = [
     { name: 'PC / Steam', slug: 'PC', icon: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>, color: 'from-blue-600 to-indigo-700', count: products.filter(p => (p.platform || []).includes('PC')).length },
@@ -455,7 +460,7 @@ export default function HomePage() {
               <div className="p-8 md:p-12 text-white">
                 <div className="flex items-center gap-2 mb-4">
                   <span className="px-3 py-1 bg-[#ee626b]/20 text-[#ee626b] text-xs font-bold rounded-full border border-[#ee626b]/30">
-                    🔥 DEAL OF THE DAY
+                    🔥 {promoTitle}
                   </span>
                 </div>
                 <h3 className="text-3xl md:text-4xl font-extrabold mb-3">{dealProduct.name}</h3>
