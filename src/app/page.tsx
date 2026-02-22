@@ -68,14 +68,6 @@ export default function HomePage() {
               <h2 className="text-5xl lg:text-6xl font-bold mb-8 leading-tight drop-shadow-lg">
                 {settings.heroTitle || 'BEST GAMING SITE EVER!'}
               </h2>
-              <div className="relative inline-block mb-10">
-                <Image
-                  src="/images/caption-dec.png"
-                  alt=""
-                  width={202}
-                  height={12}
-                />
-              </div>
               <p className="text-lg opacity-90 mb-10 max-w-lg drop-shadow-md">
                 {settings.heroDescription || 'ZOGAMING is your ultimate destination for the best video games. Browse our collection of action, adventure, strategy, and racing games.'}
               </p>
