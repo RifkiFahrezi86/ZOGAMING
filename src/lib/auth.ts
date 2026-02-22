@@ -5,16 +5,25 @@ import { randomBytes } from 'crypto';
 // SECURITY: JWT_SECRET MUST be set in environment variables
 // In production, the app will refuse to start without it
 // In development, a random secret is generated per restart (sessions won't persist across restarts)
-let rawSecret: string;
-if (process.env.JWT_SECRET) {
-  rawSecret = process.env.JWT_SECRET;
-} else if (process.env.NODE_ENV === 'production') {
-  throw new Error('FATAL: JWT_SECRET environment variable is required in production! Set a strong random string of at least 32 characters.');
-} else {
-  rawSecret = randomBytes(64).toString('hex');
-  console.warn('WARNING: JWT_SECRET not set. Using random secret for development (sessions reset on restart).');
+// Uses lazy initialization so the module can be imported at build time without crashing
+let _jwtSecret: Uint8Array | null = null;
+
+function getJwtSecret(): Uint8Array {
+  if (_jwtSecret) return _jwtSecret;
+
+  let rawSecret: string;
+  if (process.env.JWT_SECRET) {
+    rawSecret = process.env.JWT_SECRET;
+  } else if (process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL: JWT_SECRET environment variable is required in production! Set a strong random string of at least 32 characters.');
+  } else {
+    rawSecret = randomBytes(64).toString('hex');
+    console.warn('WARNING: JWT_SECRET not set. Using random secret for development (sessions reset on restart).');
+  }
+
+  _jwtSecret = new TextEncoder().encode(rawSecret);
+  return _jwtSecret;
 }
-const JWT_SECRET = new TextEncoder().encode(rawSecret);
 
 export interface JWTPayload {
   userId: number;
@@ -28,12 +37,12 @@ export async function signToken(payload: JWTPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
     .setIssuedAt()
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload as unknown as JWTPayload;
   } catch {
     return null;
