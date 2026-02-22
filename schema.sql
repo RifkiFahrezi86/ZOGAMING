@@ -109,6 +109,17 @@ CREATE TABLE IF NOT EXISTS admins (
 -- Add assigned_admin_id to orders for round-robin routing
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_admin_id INTEGER REFERENCES admins(id) ON DELETE SET NULL;
 
+-- 10. Reviews table (real customer reviews)
+CREATE TABLE IF NOT EXISTS reviews (
+  id SERIAL PRIMARY KEY,
+  product_id VARCHAR(50) NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(product_id, user_id)  -- satu user hanya bisa review sekali per produk
+);
+
 -- ============================================
 -- INDEXES for performance
 -- ============================================
@@ -121,3 +132,5 @@ CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_admins_active ON admins(active);
+CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);

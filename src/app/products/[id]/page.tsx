@@ -1,21 +1,35 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/ui/ProductCard';
 import { useData } from '@/lib/DataContext';
+import { useAuth } from '@/lib/AuthContext';
 import { BadgeDisplay, StarRating } from '@/components/ui/BadgeIcon';
-import { formatRupiah, formatDownloads } from '@/lib/types';
+import { formatRupiah, formatDownloads, Review } from '@/lib/types';
 
 export default function ProductDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params);
     const { products, categories, addToCart, getBadgeById } = useData();
+    const { user } = useAuth();
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
     const [addedToCart, setAddedToCart] = useState(false);
+
+    // Review state
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [totalReviews, setTotalReviews] = useState(0);
+    const [avgRating, setAvgRating] = useState(0);
+    const [canReview, setCanReview] = useState(false);
+    const [hasReviewed, setHasReviewed] = useState(false);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState('');
+    const [reviewLoading, setReviewLoading] = useState(false);
+    const [reviewError, setReviewError] = useState('');
+    const [reviewSuccess, setReviewSuccess] = useState(false);
 
     const product = products.find((p) => p.id === resolvedParams.id);
     const relatedProducts = products
@@ -38,6 +52,57 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
             </>
         );
     }
+
+    // Fetch reviews from database
+    const fetchReviews = useCallback(async () => {
+        try {
+            const res = await fetch(`/api/reviews?productId=${resolvedParams.id}`);
+            const data = await res.json();
+            if (data.reviews) {
+                setReviews(data.reviews);
+                setTotalReviews(data.totalReviews);
+                setAvgRating(data.avgRating);
+                setCanReview(data.canReview);
+                setHasReviewed(data.hasReviewed);
+            }
+        } catch (err) {
+            console.error('Failed to fetch reviews:', err);
+        }
+    }, [resolvedParams.id]);
+
+    useEffect(() => {
+        fetchReviews();
+    }, [fetchReviews, user]);
+
+    const handleSubmitReview = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setReviewError('');
+        setReviewLoading(true);
+        try {
+            const res = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: product.id,
+                    rating: reviewRating,
+                    comment: reviewComment,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setReviewError(data.error || 'Gagal mengirim ulasan');
+            } else {
+                setReviewSuccess(true);
+                setReviewComment('');
+                setReviewRating(5);
+                fetchReviews(); // Refresh reviews
+            }
+        } catch {
+            setReviewError('Terjadi kesalahan');
+        } finally {
+            setReviewLoading(false);
+        }
+    };
 
     const displayPrice = product.salePrice || product.price;
     const hasDiscount = product.salePrice && product.salePrice < product.price;
@@ -289,7 +354,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
-                            Ulasan (3)
+                            Ulasan ({totalReviews})
                         </button>
                     </div>
                     <div className="p-8">
@@ -305,19 +370,130 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                {[
-                                    { name: 'Andi Pratama', rating: 5, comment: 'Game original dan proses cepat. Mantap!' },
-                                    { name: 'Rina Sari', rating: 4, comment: 'Akun langsung dikirim, grafis bagus banget.' },
-                                    { name: 'Budi Setiawan', rating: 5, comment: 'Recommended banget, admin responsif!' },
-                                ].map((review, index) => (
-                                    <div key={index} className="border-b border-gray-100 pb-6 last:border-0">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="font-semibold text-gray-900">{review.name}</span>
-                                            <StarRating rating={review.rating} size={14} />
+                                {/* Review Summary */}
+                                {totalReviews > 0 && (
+                                    <div className="flex items-center gap-4 pb-6 border-b border-gray-100">
+                                        <div className="text-center">
+                                            <div className="text-4xl font-bold text-gray-900">{avgRating}</div>
+                                            <StarRating rating={avgRating} size={16} />
+                                            <div className="text-sm text-gray-500 mt-1">{totalReviews} ulasan</div>
                                         </div>
-                                        <p className="text-gray-600">{review.comment}</p>
                                     </div>
-                                ))}
+                                )}
+
+                                {/* Review Form - only for customers who purchased */}
+                                {user && canReview && !hasReviewed && !reviewSuccess && (
+                                    <form onSubmit={handleSubmitReview} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                                        <h4 className="font-semibold text-gray-900 mb-4">Tulis Ulasan Anda</h4>
+                                        
+                                        {/* Star Rating Selector */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                                            <div className="flex gap-1">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <button
+                                                        type="button"
+                                                        key={star}
+                                                        onClick={() => setReviewRating(star)}
+                                                        className="transition-transform hover:scale-110"
+                                                    >
+                                                        <svg width="28" height="28" viewBox="0 0 24 24"
+                                                            fill={star <= reviewRating ? '#f59e0b' : 'none'}
+                                                            stroke={star <= reviewRating ? '#f59e0b' : '#d1d5db'}
+                                                            strokeWidth="2"
+                                                        >
+                                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                                        </svg>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Comment */}
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">Ulasan</label>
+                                            <textarea
+                                                value={reviewComment}
+                                                onChange={(e) => setReviewComment(e.target.value)}
+                                                placeholder="Ceritakan pengalaman Anda dengan game ini..."
+                                                rows={3}
+                                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#ee626b] focus:border-transparent outline-none resize-none text-gray-900"
+                                                required
+                                                minLength={5}
+                                            />
+                                        </div>
+
+                                        {reviewError && (
+                                            <p className="text-red-500 text-sm mb-3">{reviewError}</p>
+                                        )}
+
+                                        <button
+                                            type="submit"
+                                            disabled={reviewLoading || reviewComment.trim().length < 5}
+                                            className="px-6 py-2.5 bg-[#ee626b] text-white font-semibold rounded-full hover:bg-[#d4555d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {reviewLoading ? 'Mengirim...' : 'Kirim Ulasan'}
+                                        </button>
+                                    </form>
+                                )}
+
+                                {/* Success message */}
+                                {reviewSuccess && (
+                                    <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-green-800 flex items-center gap-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                        Terima kasih! Ulasan Anda berhasil dikirim.
+                                    </div>
+                                )}
+
+                                {/* Already reviewed message */}
+                                {user && hasReviewed && !reviewSuccess && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-blue-800 text-sm">
+                                        ✓ Anda sudah memberikan ulasan untuk produk ini.
+                                    </div>
+                                )}
+
+                                {/* Login prompt */}
+                                {!user && (
+                                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-600 text-sm">
+                                        <Link href="/login" className="text-[#ee626b] font-semibold hover:underline">Login</Link> untuk memberikan ulasan. Hanya customer yang sudah membeli game ini yang bisa mengulas.
+                                    </div>
+                                )}
+
+                                {/* Customer logged in but hasn't purchased */}
+                                {user && user.role === 'customer' && !canReview && !hasReviewed && (
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-800 text-sm">
+                                        Anda harus membeli game ini terlebih dahulu sebelum bisa memberikan ulasan.
+                                    </div>
+                                )}
+
+                                {/* Reviews List */}
+                                {reviews.length > 0 ? (
+                                    reviews.map((review) => (
+                                        <div key={review.id} className="border-b border-gray-100 pb-6 last:border-0">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 bg-gradient-to-br from-[#ee626b] to-[#d4555d] rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                                        {review.userName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="font-semibold text-gray-900">{review.userName}</span>
+                                                    <StarRating rating={review.rating} size={14} />
+                                                </div>
+                                                <span className="text-xs text-gray-400">
+                                                    {new Date(review.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                </span>
+                                            </div>
+                                            <p className="text-gray-600 ml-10">{review.comment}</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-gray-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-50">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        <p className="font-medium">Belum ada ulasan</p>
+                                        <p className="text-sm mt-1">Jadilah yang pertama mengulas game ini!</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

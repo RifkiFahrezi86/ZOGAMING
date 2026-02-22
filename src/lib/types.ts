@@ -74,6 +74,17 @@ export function formatRupiah(amount: number): string {
   return 'Rp ' + amount.toLocaleString('id-ID');
 }
 
+// Review Types
+export interface Review {
+  id: number;
+  productId: string;
+  userId: number;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 export function formatDownloads(count: number): string {
   if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
   if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
