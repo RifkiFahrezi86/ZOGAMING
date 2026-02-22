@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeId, sanitizeInput } from '@/lib/security';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,16 +13,26 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await request.json();
     const sql = getDb();
+    const orderId = sanitizeId(id);
+    if (!orderId) return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
+
+    // Validate status to prevent arbitrary values
+    const validStatuses = ['pending', 'processing', 'complete', 'cancelled'];
+    const status = sanitizeInput(body.status || '');
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json({ error: 'Status pesanan tidak valid' }, { status: 400 });
+    }
+    const safeNotes = body.notes ? sanitizeInput(body.notes).slice(0, 1000) : null;
 
     await sql`
-      UPDATE orders SET status = ${body.status}, notes = COALESCE(${body.notes || null}, notes), updated_at = NOW()
-      WHERE id = ${parseInt(id)}
+      UPDATE orders SET status = ${status}, notes = COALESCE(${safeNotes}, notes), updated_at = NOW()
+      WHERE id = ${orderId}
     `;
 
     // If status changed to complete, send WhatsApp to customer
     if (body.status === 'complete') {
       try {
-        const orderData = await sql`SELECT * FROM orders WHERE id = ${parseInt(id)}`;
+        const orderData = await sql`SELECT * FROM orders WHERE id = ${orderId}`;
         const fonnteToken = process.env.FONNTE_TOKEN;
         
         if (orderData.length > 0 && fonnteToken && orderData[0].customer_phone) {
@@ -60,7 +71,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     const { id } = await params;
     const sql = getDb();
-    const orderId = parseInt(id);
+    const orderId = sanitizeId(id);
+    if (!orderId) return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
 
     if (user.role === 'admin') {
       // Admin can delete any order

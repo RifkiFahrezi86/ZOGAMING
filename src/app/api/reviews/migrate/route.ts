@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { getAuthUser } from '@/lib/auth';
 
-// GET /api/reviews/migrate - Create reviews table (one-time migration)
+// GET /api/reviews/migrate - Create reviews table (one-time migration, admin only)
 export async function GET() {
   try {
+    // SECURITY: Require admin authentication for migration
+    const user = await getAuthUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const sql = getDb();
 
     await sql`
@@ -23,6 +30,6 @@ export async function GET() {
     return NextResponse.json({ message: 'Reviews table created successfully!' });
   } catch (error) {
     console.error('Migration error:', error);
-    return NextResponse.json({ error: 'Migration failed', details: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Migration failed' }, { status: 500 });
   }
 }

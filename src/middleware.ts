@@ -41,6 +41,9 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = getIp(request);
 
+  // Normalize pathname for bypass prevention
+  const normalizedPath = decodeURIComponent(pathname).toLowerCase().replace(/\/+/g, '/');
+
   // =============================================
   // 1. Block suspicious paths (common attack vectors)
   // =============================================
@@ -48,21 +51,25 @@ export function middleware(request: NextRequest) {
     '/wp-admin', '/wp-login', '/xmlrpc.php', '/.env',
     '/phpmyadmin', '/admin.php', '/.git', '/wp-content',
     '/wp-includes', '/cgi-bin', '/.htaccess', '/server-status',
+    '/.aws', '/.docker', '/config.php', '/debug', '/trace',
+    '/actuator', '/.svn', '/_debug', '/elmah.axd',
   ];
   
-  if (blockedPaths.some(p => pathname.toLowerCase().startsWith(p))) {
+  if (blockedPaths.some(p => normalizedPath.startsWith(p))) {
     return new NextResponse('Not Found', { status: 404 });
   }
 
   // =============================================
   // 2. Block requests with suspicious query strings
   // =============================================
-  const url = request.nextUrl.toString().toLowerCase();
+  const url = decodeURIComponent(request.nextUrl.toString()).toLowerCase();
   const suspiciousPatterns = [
-    'union+select', 'union%20select', 'select+from', 'select%20from',
-    'drop+table', 'drop%20table', 'insert+into', 'insert%20into',
+    'union select', 'union+select', 'union%20select', 'select from', 'select+from', 'select%20from',
+    'drop table', 'drop+table', 'drop%20table', 'insert into', 'insert+into', 'insert%20into',
     '<script', '%3cscript', 'javascript:', 'onerror=', 'onload=',
     '../../../', '..%2f..%2f', '/etc/passwd', 'cmd.exe',
+    'eval(', 'exec(', 'system(', 'passthru(', 'base64_decode(',
+    '0x', 'char(', 'concat(', 'benchmark(', 'sleep(',
   ];
   
   if (suspiciousPatterns.some(p => url.includes(p))) {

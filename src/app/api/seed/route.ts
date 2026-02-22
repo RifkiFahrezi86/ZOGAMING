@@ -3,12 +3,27 @@ import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { encryptPassword } from '@/lib/crypto';
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/security';
+import { getAuthUser } from '@/lib/auth';
 import productsData from '@/data/products.json';
 import categoriesData from '@/data/categories.json';
 import badgesData from '@/data/badges.json';
 
 export async function POST(request: Request) {
   try {
+    // SECURITY: Require admin authentication for seed
+    const user = await getAuthUser();
+    if (user && user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden: hanya admin yang dapat menjalankan seed' }, { status: 403 });
+    }
+    // Allow unauthenticated only if no admin user exists yet (first-time setup)
+    if (!user) {
+      const sql = getDb();
+      const existingAdmins = await sql`SELECT id FROM users WHERE role = 'admin' LIMIT 1`;
+      if (existingAdmins.length > 0) {
+        return NextResponse.json({ error: 'Unauthorized: login sebagai admin untuk menjalankan seed' }, { status: 401 });
+      }
+    }
+
     // Rate limiting - very strict for seed
     const ip = getClientIp(request);
     const rateCheck = checkRateLimit(`seed:${ip}`, RATE_LIMITS.seed);
@@ -134,10 +149,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       message: 'Database seeded successfully!',
-      admin: { email: 'admin@zogaming.com', password: 'admin123' },
+      info: 'Default admin: admin@zogaming.com — ubah password setelah login pertama',
     });
   } catch (error) {
     console.error('Seed error:', error);
-    return NextResponse.json({ error: 'Seed failed', details: String(error) }, { status: 500 });
+    return NextResponse.json({ error: 'Seed gagal. Periksa konfigurasi database.' }, { status: 500 });
   }
 }

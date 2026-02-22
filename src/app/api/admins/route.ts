@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeInput, sanitizePhone } from '@/lib/security';
 
 export async function GET() {
   try {
@@ -47,7 +48,8 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, whatsapp } = body;
+    const name = sanitizeInput(body.name || '').slice(0, 255);
+    const whatsapp = sanitizePhone(body.whatsapp || '');
 
     if (!name || !whatsapp) {
       return NextResponse.json({ error: 'Nama dan nomor WhatsApp wajib diisi' }, { status: 400 });

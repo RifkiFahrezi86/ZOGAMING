@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
-import { encryptPassword } from '@/lib/crypto';
-import { sanitizeInput, sanitizePhone } from '@/lib/security';
+import { sanitizeInput, sanitizePhone, sanitizeEmail } from '@/lib/security';
 
 // POST /api/admin/customers - Quick create a customer from admin
 export async function POST(request: Request) {
@@ -15,15 +14,25 @@ export async function POST(request: Request) {
 
     const sql = getDb();
     const body = await request.json();
-    const name = sanitizeInput(body.name || '');
+    const name = sanitizeInput(body.name || '').slice(0, 255);
     const phone = sanitizePhone(body.phone || '');
+    const password = body.password?.trim() || 'customer123';
 
     if (!name) {
       return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 });
     }
 
-    // Auto-generate email if not provided
-    const email = body.email?.trim() || `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}${Date.now()}@zogaming.fake`;
+    // Sanitize email or auto-generate
+    let email: string;
+    if (body.email?.trim()) {
+      const cleanEmail = sanitizeEmail(body.email.trim());
+      if (!cleanEmail) {
+        return NextResponse.json({ error: 'Format email tidak valid' }, { status: 400 });
+      }
+      email = cleanEmail;
+    } else {
+      email = `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}${Date.now()}@zogaming.fake`;
+    }
 
     // Check if email already exists
     const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
@@ -31,14 +40,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email sudah terdaftar' }, { status: 409 });
     }
 
-    const defaultPassword = 'customer123';
-    const hash = await bcrypt.hash(defaultPassword, 12);
-    const enc = encryptPassword(defaultPassword);
+    const hash = await bcrypt.hash(password, 12);
+
+    // Try to encrypt password, but don't fail if encryption is unavailable
+    let enc = '';
+    try {
+      const { encryptPassword } = await import('@/lib/crypto');
+      enc = encryptPassword(password);
+    } catch {
+      // Encryption key not configured - skip encrypted storage
+    }
+
+    // Ensure password_enc column exists
+    try {
+      await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_enc TEXT DEFAULT ''`;
+    } catch {
+      // Column may already exist or ALTER not supported
+    }
 
     const result = await sql`
       INSERT INTO users (name, email, password_hash, password_enc, phone, role)
       VALUES (${name}, ${email}, ${hash}, ${enc}, ${phone}, 'customer')
-      RETURNING id, name, email, phone
+      RETURNING id, name, email, phone, created_at
     `;
 
     return NextResponse.json({
@@ -46,9 +69,44 @@ export async function POST(request: Request) {
       name: result[0].name,
       email: result[0].email,
       phone: result[0].phone,
+      createdAt: result[0].created_at,
+      defaultPassword: password,
     });
   } catch (error) {
     console.error('POST admin customer error:', error);
-    return NextResponse.json({ error: 'Gagal membuat customer' }, { status: 500 });
+    
+    // Provide more specific error messages
+    const errMsg = String(error);
+    if (errMsg.includes('password_enc')) {
+      // Column doesn't exist - try without it
+      try {
+        const sql = getDb();
+        const body = await request.json();
+        const name = sanitizeInput(body.name || '').slice(0, 255);
+        const phone = sanitizePhone(body.phone || '');
+        const password = body.password?.trim() || 'customer123';
+        const email = body.email?.trim() || `${name.toLowerCase().replace(/[^a-z0-9]/g, '')}${Date.now()}@zogaming.fake`;
+        const hash = await bcrypt.hash(password, 12);
+
+        const result = await sql`
+          INSERT INTO users (name, email, password_hash, phone, role)
+          VALUES (${name}, ${email}, ${hash}, ${phone}, 'customer')
+          RETURNING id, name, email, phone, created_at
+        `;
+
+        return NextResponse.json({
+          id: result[0].id,
+          name: result[0].name,
+          email: result[0].email,
+          phone: result[0].phone,
+          createdAt: result[0].created_at,
+          defaultPassword: password,
+        });
+      } catch (fallbackError) {
+        console.error('Fallback insert error:', fallbackError);
+      }
+    }
+    
+    return NextResponse.json({ error: 'Gagal membuat customer. Pastikan database sudah di-seed.' }, { status: 500 });
   }
 }

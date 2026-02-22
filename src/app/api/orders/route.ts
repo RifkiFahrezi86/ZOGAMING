@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeInput, sanitizePhone } from '@/lib/security';
 
 export async function GET(request: Request) {
   try {
@@ -82,10 +83,21 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Silakan login terlebih dahulu' }, { status: 401 });
 
     const body = await request.json();
-    const { customerName, customerEmail, customerPhone, items, notes } = body;
+    const { items } = body;
+    const customerName = sanitizeInput(body.customerName || '').slice(0, 255);
+    const customerEmail = sanitizeInput(body.customerEmail || user.email).slice(0, 255);
+    const customerPhone = sanitizePhone(body.customerPhone || '');
+    const notes = sanitizeInput(body.notes || '').slice(0, 1000);
 
-    if (!customerName || !customerPhone || !items || items.length === 0) {
+    if (!customerName || !customerPhone || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Data pesanan tidak lengkap' }, { status: 400 });
+    }
+
+    // Validate items structure
+    for (const item of items) {
+      if (!item.productId || typeof item.price !== 'number' || item.price < 0) {
+        return NextResponse.json({ error: 'Data item pesanan tidak valid' }, { status: 400 });
+      }
     }
 
     const total = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + item.price * item.quantity, 0);
@@ -134,7 +146,7 @@ export async function POST(request: Request) {
     // Create order
     const orderResult = await sql`
       INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, total, status, notes, assigned_admin_id)
-      VALUES (${user.userId}, ${customerName}, ${customerEmail || user.email}, ${customerPhone}, ${total}, 'pending', ${notes || ''}, ${assignedAdminId})
+      VALUES (${user.userId}, ${customerName}, ${customerEmail}, ${customerPhone}, ${total}, 'pending', ${notes}, ${assignedAdminId})
       RETURNING id
     `;
 
@@ -142,9 +154,12 @@ export async function POST(request: Request) {
 
     // Create order items
     for (const item of items) {
+      const productName = sanitizeInput(item.productName || '').slice(0, 255);
+      const productImage = sanitizeInput(item.productImage || '').slice(0, 500);
+      const quantity = Math.max(1, Math.min(parseInt(item.quantity) || 1, 999));
       await sql`
         INSERT INTO order_items (order_id, product_id, product_name, product_image, quantity, price)
-        VALUES (${orderId}, ${item.productId}, ${item.productName}, ${item.productImage || ''}, ${item.quantity || 1}, ${item.price})
+        VALUES (${orderId}, ${item.productId}, ${productName}, ${productImage}, ${quantity}, ${item.price})
       `;
     }
 
@@ -182,7 +197,6 @@ export async function POST(request: Request) {
       message: 'Pesanan berhasil dibuat!',
       total,
       assignedAdminId,
-      assignedAdminPhone,
     });
   } catch (error) {
     console.error('POST orders error:', error);

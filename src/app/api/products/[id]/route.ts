@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeInput, sanitizeString } from '@/lib/security';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,16 +13,21 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await request.json();
     const sql = getDb();
+    const name = sanitizeString(body.name, 255);
+    const slug = sanitizeString(body.slug, 255);
+    const category = sanitizeString(body.category, 100);
+    const image = sanitizeString(body.image, 500);
+    const description = sanitizeInput(body.description || '').slice(0, 5000);
 
     await sql`
       UPDATE products SET
-        name = ${body.name},
-        slug = ${body.slug},
-        category = ${body.category},
+        name = ${name},
+        slug = ${slug},
+        category = ${category},
         price = ${body.price},
         sale_price = ${body.salePrice || null},
-        image = ${body.image},
-        description = ${body.description || ''},
+        image = ${image},
+        description = ${description},
         tags = ${body.tags || []},
         featured = ${body.featured || false},
         trending = ${body.trending || false},

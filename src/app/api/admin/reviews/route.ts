@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeInput, sanitizeId } from '@/lib/security';
 
 // GET /api/admin/reviews - Get all reviews with customer & product info
 export async function GET() {
@@ -52,10 +53,16 @@ export async function POST(request: Request) {
 
     const sql = getDb();
     const body = await request.json();
-    const { userId, productId, rating, comment } = body;
+    const { userId, productId, rating } = body;
+    const comment = sanitizeInput(body.comment || '').slice(0, 2000);
 
     if (!userId || !productId || !rating || !comment) {
       return NextResponse.json({ error: 'Semua field wajib diisi' }, { status: 400 });
+    }
+
+    const parsedUserId = sanitizeId(userId);
+    if (!parsedUserId) {
+      return NextResponse.json({ error: 'User ID tidak valid' }, { status: 400 });
     }
 
     if (rating < 1 || rating > 5) {
@@ -64,7 +71,7 @@ export async function POST(request: Request) {
 
     // Check if this user already reviewed this product
     const existing = await sql`
-      SELECT id FROM reviews WHERE product_id = ${productId} AND user_id = ${parseInt(userId)}
+      SELECT id FROM reviews WHERE product_id = ${productId} AND user_id = ${parsedUserId}
     `;
     if (existing.length > 0) {
       return NextResponse.json({ error: 'Customer ini sudah punya review di produk ini' }, { status: 409 });
@@ -72,7 +79,7 @@ export async function POST(request: Request) {
 
     const result = await sql`
       INSERT INTO reviews (product_id, user_id, rating, comment)
-      VALUES (${productId}, ${parseInt(userId)}, ${parseInt(rating)}, ${comment.trim()})
+      VALUES (${productId}, ${parsedUserId}, ${parseInt(rating)}, ${comment})
       RETURNING id, product_id, user_id, rating, comment, created_at
     `;
 

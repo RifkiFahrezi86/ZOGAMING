@@ -1,10 +1,18 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { randomBytes } from 'crypto';
 
-// IMPORTANT: Set JWT_SECRET in environment variables for production!
-const rawSecret = process.env.JWT_SECRET || 'zogaming-secret-key-2024-change-in-production';
-if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-  console.error('WARNING: JWT_SECRET is not set! Using default secret is INSECURE in production.');
+// SECURITY: JWT_SECRET MUST be set in environment variables
+// In production, the app will refuse to start without it
+// In development, a random secret is generated per restart (sessions won't persist across restarts)
+let rawSecret: string;
+if (process.env.JWT_SECRET) {
+  rawSecret = process.env.JWT_SECRET;
+} else if (process.env.NODE_ENV === 'production') {
+  throw new Error('FATAL: JWT_SECRET environment variable is required in production! Set a strong random string of at least 32 characters.');
+} else {
+  rawSecret = randomBytes(64).toString('hex');
+  console.warn('WARNING: JWT_SECRET not set. Using random secret for development (sessions reset on restart).');
 }
 const JWT_SECRET = new TextEncoder().encode(rawSecret);
 

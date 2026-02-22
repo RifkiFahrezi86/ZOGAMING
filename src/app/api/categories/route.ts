@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeString, sanitizeInput } from '@/lib/security';
 
 export async function GET() {
   try {
@@ -22,11 +23,19 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const sql = getDb();
-    const id = body.id || Date.now().toString();
+    const id = sanitizeString(body.id || Date.now().toString(), 100);
+    const name = sanitizeString(body.name, 255);
+    const slug = sanitizeString(body.slug, 255);
+    const image = sanitizeString(body.image || '', 500);
+    const description = sanitizeInput(body.description || '').slice(0, 2000);
+
+    if (!name || !slug) {
+      return NextResponse.json({ error: 'Nama dan slug wajib diisi' }, { status: 400 });
+    }
 
     await sql`
       INSERT INTO categories (id, name, slug, image, description)
-      VALUES (${id}, ${body.name}, ${body.slug}, ${body.image || ''}, ${body.description || ''})
+      VALUES (${id}, ${name}, ${slug}, ${image}, ${description})
     `;
 
     return NextResponse.json({ id, message: 'Category created' });

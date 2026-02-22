@@ -95,11 +95,18 @@ export function validatePassword(password: string): { valid: boolean; error?: st
   if (typeof password !== 'string') {
     return { valid: false, error: 'Password harus berupa teks' };
   }
-  if (password.length < 6) {
-    return { valid: false, error: 'Password minimal 6 karakter' };
+  if (password.length < 8) {
+    return { valid: false, error: 'Password minimal 8 karakter' };
   }
   if (password.length > 128) {
     return { valid: false, error: 'Password maksimal 128 karakter' };
+  }
+  // Require at least one letter and one number
+  if (!/[a-zA-Z]/.test(password)) {
+    return { valid: false, error: 'Password harus mengandung minimal 1 huruf' };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, error: 'Password harus mengandung minimal 1 angka' };
   }
   return { valid: true };
 }

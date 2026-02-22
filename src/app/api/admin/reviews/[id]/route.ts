@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeInput, sanitizeId } from '@/lib/security';
 
 // PUT /api/admin/reviews/[id] - Update a review
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -13,10 +14,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const sql = getDb();
     const body = await request.json();
-    const { rating, comment, userId, productId } = body;
+    const { rating, userId, productId } = body;
+    const comment = sanitizeInput(body.comment || '').slice(0, 2000);
+    const reviewId = sanitizeId(id);
+    if (!reviewId) return NextResponse.json({ error: 'Invalid review ID' }, { status: 400 });
 
     // Verify review exists
-    const reviewRows = await sql`SELECT * FROM reviews WHERE id = ${parseInt(id)}`;
+    const reviewRows = await sql`SELECT * FROM reviews WHERE id = ${reviewId}`;
     if (reviewRows.length === 0) {
       return NextResponse.json({ error: 'Review not found' }, { status: 404 });
     }
@@ -25,9 +29,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     // Build update - support changing customer, product, rating, comment
     if (userId && productId) {
+      const parsedUserId = sanitizeId(userId);
+      if (!parsedUserId) return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
       // Check unique constraint if changing user or product
       const existing = await sql`
-        SELECT id FROM reviews WHERE product_id = ${productId} AND user_id = ${parseInt(userId)} AND id != ${parseInt(id)}
+        SELECT id FROM reviews WHERE product_id = ${productId} AND user_id = ${parsedUserId} AND id != ${reviewId}
       `;
       if (existing.length > 0) {
         return NextResponse.json({ error: 'Customer ini sudah punya review di produk tersebut' }, { status: 409 });
@@ -35,15 +41,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       await sql`
         UPDATE reviews SET 
           rating = ${parseInt(rating)}, 
-          comment = ${comment.trim()},
-          user_id = ${parseInt(userId)},
+          comment = ${comment},
+          user_id = ${parsedUserId},
           product_id = ${productId}
-        WHERE id = ${parseInt(id)}
+        WHERE id = ${reviewId}
       `;
     } else {
       await sql`
-        UPDATE reviews SET rating = ${parseInt(rating)}, comment = ${comment.trim()}
-        WHERE id = ${parseInt(id)}
+        UPDATE reviews SET rating = ${parseInt(rating)}, comment = ${comment}
+        WHERE id = ${reviewId}
       `;
     }
 
@@ -83,16 +89,18 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     const { id } = await params;
     const sql = getDb();
+    const reviewId = sanitizeId(id);
+    if (!reviewId) return NextResponse.json({ error: 'Invalid review ID' }, { status: 400 });
 
     // Get review info before deleting
-    const reviewRows = await sql`SELECT product_id FROM reviews WHERE id = ${parseInt(id)}`;
+    const reviewRows = await sql`SELECT product_id FROM reviews WHERE id = ${reviewId}`;
     if (reviewRows.length === 0) {
       return NextResponse.json({ error: 'Review not found' }, { status: 404 });
     }
 
     const productId = reviewRows[0].product_id;
 
-    await sql`DELETE FROM reviews WHERE id = ${parseInt(id)}`;
+    await sql`DELETE FROM reviews WHERE id = ${reviewId}`;
 
     // Update product average rating
     const avgResult = await sql`

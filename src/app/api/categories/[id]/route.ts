@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeString, sanitizeInput } from '@/lib/security';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -11,9 +12,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await request.json();
     const sql = getDb();
+    const name = sanitizeString(body.name, 255);
+    const slug = sanitizeString(body.slug, 255);
+    const image = sanitizeString(body.image || '', 500);
+    const description = sanitizeInput(body.description || '').slice(0, 2000);
 
     await sql`
-      UPDATE categories SET name = ${body.name}, slug = ${body.slug}, image = ${body.image || ''}, description = ${body.description || ''}
+      UPDATE categories SET name = ${name}, slug = ${slug}, image = ${image}, description = ${description}
       WHERE id = ${id}
     `;
     return NextResponse.json({ message: 'Updated' });

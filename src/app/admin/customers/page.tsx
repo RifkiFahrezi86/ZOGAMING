@@ -73,6 +73,16 @@ export default function AdminCustomersPage() {
   const [viewPasswordData, setViewPasswordData] = useState<{ name: string; email: string; password: string } | null>(null);
   const [viewPasswordLoading, setViewPasswordLoading] = useState(false);
 
+  // Tambah Customer
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [addCustName, setAddCustName] = useState('');
+  const [addCustEmail, setAddCustEmail] = useState('');
+  const [addCustPhone, setAddCustPhone] = useState('');
+  const [addCustPassword, setAddCustPassword] = useState('');
+  const [addCustLoading, setAddCustLoading] = useState(false);
+  const [addCustMessage, setAddCustMessage] = useState('');
+  const [addCustSuccess, setAddCustSuccess] = useState(false);
+
   const resetTargetName = resetPasswordId !== null
     ? (customers.find(c => c.id === resetPasswordId)?.name ?? selectedCustomer?.name ?? 'Customer')
     : 'Customer';
@@ -208,6 +218,57 @@ export default function AdminCustomersPage() {
       setViewPasswordData({ name: '-', email: '-', password: 'Gagal mengambil password' });
     } finally {
       setViewPasswordLoading(false);
+    }
+  };
+
+  const handleAddCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addCustName.trim()) return;
+    setAddCustLoading(true);
+    setAddCustMessage('');
+    setAddCustSuccess(false);
+    try {
+      const res = await fetch('/api/admin/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: addCustName.trim(),
+          email: addCustEmail.trim() || undefined,
+          phone: addCustPhone.trim() || undefined,
+          password: addCustPassword.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAddCustSuccess(true);
+        setAddCustMessage(`Customer "${data.name}" berhasil dibuat! Password: ${data.defaultPassword}`);
+        // Add to local list
+        setCustomers(prev => [{
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          phone: data.phone || '',
+          createdAt: data.createdAt || new Date().toISOString(),
+          totalOrders: 0,
+          totalSpent: 0,
+        }, ...prev]);
+        // Reset form after delay
+        setTimeout(() => {
+          setShowAddCustomer(false);
+          setAddCustName('');
+          setAddCustEmail('');
+          setAddCustPhone('');
+          setAddCustPassword('');
+          setAddCustMessage('');
+          setAddCustSuccess(false);
+        }, 2500);
+      } else {
+        setAddCustMessage(data.error || 'Gagal membuat customer');
+      }
+    } catch {
+      setAddCustMessage('Terjadi kesalahan jaringan');
+    } finally {
+      setAddCustLoading(false);
     }
   };
 
@@ -495,6 +556,13 @@ export default function AdminCustomersPage() {
           <h1 className="text-2xl font-bold text-white">Customers</h1>
           <p className="text-slate-400 text-sm mt-1">Kelola akun customer dan lihat pesanan mereka</p>
         </div>
+        <button
+          onClick={() => { setShowAddCustomer(true); setAddCustName(''); setAddCustEmail(''); setAddCustPhone(''); setAddCustPassword(''); setAddCustMessage(''); setAddCustSuccess(false); }}
+          className="flex items-center gap-2 px-5 py-2.5 bg-[#ee626b] hover:bg-[#d4555d] text-white font-semibold rounded-xl transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Tambah Customer
+        </button>
       </div>
 
       {/* Stats */}
@@ -819,6 +887,57 @@ export default function AdminCustomersPage() {
                 </p>
               </div>
             ) : null}
+          </div>
+        </div>
+      )}
+
+      {/* Tambah Customer Modal */}
+      {showAddCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddCustomer(false)} />
+          <div className="relative bg-[#1e293b] rounded-2xl p-6 shadow-2xl w-full max-w-md border border-slate-700/50">
+            <button onClick={() => setShowAddCustomer(false)} className="absolute top-3 right-3 p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-[#ee626b]/10 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ee626b" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Tambah Customer Baru</h3>
+                <p className="text-slate-400 text-xs">Buat akun customer baru dari panel admin</p>
+              </div>
+            </div>
+
+            {addCustMessage && (
+              <div className={`mb-4 p-3 rounded-xl text-sm ${addCustSuccess ? 'bg-green-500/10 border border-green-500/30 text-green-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                {addCustMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleAddCustomer} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Nama <span className="text-red-400">*</span></label>
+                <input type="text" value={addCustName} onChange={(e) => setAddCustName(e.target.value)} placeholder="Nama customer" className="w-full h-11 px-4 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-[#ee626b] focus:outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Email <span className="text-slate-500 text-xs">(opsional)</span></label>
+                <input type="email" value={addCustEmail} onChange={(e) => setAddCustEmail(e.target.value)} placeholder="email@example.com" className="w-full h-11 px-4 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-[#ee626b] focus:outline-none" />
+                <p className="text-xs text-slate-500 mt-1">Kosongkan untuk auto-generate email</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">No. WhatsApp <span className="text-slate-500 text-xs">(opsional)</span></label>
+                <input type="text" value={addCustPhone} onChange={(e) => setAddCustPhone(e.target.value)} placeholder="08xxxxxxxxxx" className="w-full h-11 px-4 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-[#ee626b] focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Password <span className="text-slate-500 text-xs">(opsional)</span></label>
+                <input type="text" value={addCustPassword} onChange={(e) => setAddCustPassword(e.target.value)} placeholder="Default: customer123" className="w-full h-11 px-4 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-[#ee626b] focus:outline-none" />
+                <p className="text-xs text-slate-500 mt-1">Kosongkan untuk password default &quot;customer123&quot;</p>
+              </div>
+              <button type="submit" disabled={addCustLoading || addCustSuccess} className="w-full h-11 bg-[#ee626b] text-white font-semibold rounded-xl hover:bg-[#d4555d] transition-colors disabled:opacity-50">
+                {addCustLoading ? 'Membuat...' : addCustSuccess ? 'Berhasil!' : 'Buat Customer'}
+              </button>
+            </form>
           </div>
         </div>
       )}

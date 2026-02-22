@@ -6,9 +6,26 @@ const KEY_LENGTH = 32;
 const IV_LENGTH = 16;
 const TAG_LENGTH = 16;
 
+// SECURITY: ENCRYPTION_KEY MUST be set in environment for password decryption to work
+let _encryptionKeyCache: Buffer | null = null;
+
 function getEncryptionKey(): Buffer {
-  const secret = process.env.ENCRYPTION_KEY || 'zogaming-enc-key-change-in-prod-2024';
-  return scryptSync(secret, 'zogaming-salt', KEY_LENGTH);
+  if (_encryptionKeyCache) return _encryptionKeyCache;
+  
+  const secret = process.env.ENCRYPTION_KEY;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: ENCRYPTION_KEY environment variable is required in production!');
+    }
+    console.warn('WARNING: ENCRYPTION_KEY not set. Password encryption will use a dev-only key.');
+    _encryptionKeyCache = scryptSync('dev-only-insecure-key', randomBytes(16).toString('hex'), KEY_LENGTH);
+    return _encryptionKeyCache;
+  }
+  
+  // Use HMAC-based salt derived from the secret itself for deterministic key derivation
+  const salt = scryptSync(secret, 'zogaming-kdf-v2', 16);
+  _encryptionKeyCache = scryptSync(secret, salt, KEY_LENGTH);
+  return _encryptionKeyCache;
 }
 
 /**

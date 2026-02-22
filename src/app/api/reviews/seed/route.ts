@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { getAuthUser } from '@/lib/auth';
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/security';
 
 // Indonesian Gen-Z names (random, non-celebrity)
 const fakeNames = [
@@ -153,8 +155,21 @@ function getWeightedRating(): { rating: number; pool: string[] } {
   return { rating: 1, pool: reviews1Star };                        // 5% give 1 star
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    // SECURITY: Require admin authentication
+    const user = await getAuthUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limiting
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`reviewseed:${ip}`, RATE_LIMITS.seed);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Terlalu sering. Coba lagi nanti.' }, { status: 429 });
+    }
+
     const sql = getDb();
 
     // Ensure reviews table exists

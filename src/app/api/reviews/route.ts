@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeInput } from '@/lib/security';
 
 // GET /api/reviews?productId=xxx - Get reviews for a product
 export async function GET(request: Request) {
@@ -87,7 +88,8 @@ export async function POST(request: Request) {
 
     const sql = getDb();
     const body = await request.json();
-    const { productId, rating, comment } = body;
+    const { productId, rating } = body;
+    const comment = sanitizeInput(body.comment || '').slice(0, 2000);
 
     if (!productId || !rating || !comment) {
       return NextResponse.json({ error: 'productId, rating, dan comment wajib diisi' }, { status: 400 });
@@ -97,7 +99,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Rating harus antara 1-5' }, { status: 400 });
     }
 
-    if (comment.trim().length < 5) {
+    if (comment.length < 5) {
       return NextResponse.json({ error: 'Ulasan minimal 5 karakter' }, { status: 400 });
     }
 
@@ -125,7 +127,7 @@ export async function POST(request: Request) {
     // Create review
     const result = await sql`
       INSERT INTO reviews (product_id, user_id, rating, comment)
-      VALUES (${productId}, ${user.userId}, ${rating}, ${comment.trim()})
+      VALUES (${productId}, ${user.userId}, ${rating}, ${comment})
       RETURNING id, product_id, user_id, rating, comment, created_at
     `;
 
