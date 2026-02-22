@@ -11,6 +11,7 @@ import { formatRupiah } from '@/lib/types';
 const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/shop', label: 'Shop' },
+    { href: '/contact', label: 'Hubungi Kami' },
 ];
 
 export default function Header() {
@@ -42,7 +43,7 @@ export default function Header() {
                 <div className="container mx-auto px-4">
                     <nav className="flex items-center justify-between">
                         <Link href="/" className="flex-shrink-0">
-                            <Image src="/images/logo.svg" alt="ZOGAMING" width={showDarkHeader ? 120 : 160} height={showDarkHeader ? 24 : 32} className="transition-all duration-300" />
+                            <Image src="/images/logo.svg" alt="ZOGAMING" width={showDarkHeader ? 140 : 170} height={showDarkHeader ? 28 : 34} className="transition-all duration-300" />
                         </Link>
 
                         {/* Desktop Nav */}
