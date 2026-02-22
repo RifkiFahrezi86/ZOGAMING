@@ -16,13 +16,16 @@ import { formatRupiah, formatDownloads } from '@/lib/types';
 function AnimatedCounter({ target, suffix = '', prefix = '' }: { target: number; suffix?: string; prefix?: string }) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
-  const hasAnimated = useRef(false);
+  const isVisible = useRef(false);
+  const lastAnimatedTarget = useRef(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated.current) {
-          hasAnimated.current = true;
+        isVisible.current = entry.isIntersecting;
+        // Animate if visible and target changed since last animation
+        if (entry.isIntersecting && target > 0 && target !== lastAnimatedTarget.current) {
+          lastAnimatedTarget.current = target;
           const duration = 2000;
           const start = Date.now();
           const step = () => {
@@ -38,6 +41,22 @@ function AnimatedCounter({ target, suffix = '', prefix = '' }: { target: number;
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
+  }, [target]);
+
+  // If data arrives while already visible, trigger animation
+  useEffect(() => {
+    if (isVisible.current && target > 0 && target !== lastAnimatedTarget.current) {
+      lastAnimatedTarget.current = target;
+      const duration = 2000;
+      const start = Date.now();
+      const step = () => {
+        const progress = Math.min((Date.now() - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setCount(Math.floor(eased * target));
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
   }, [target]);
 
   return <div ref={ref}>{prefix}{count.toLocaleString('id-ID')}{suffix}</div>;
