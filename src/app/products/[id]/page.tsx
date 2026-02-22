@@ -210,9 +210,12 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                         {product.platform && product.platform.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {product.platform.map((p) => (
-                                    <span key={p} className="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg">
+                                    <Link key={p} href={`/shop?platform=${encodeURIComponent(p)}`} className={`platform-badge ${p.toLowerCase() === 'pc' ? 'pc' : p.toLowerCase() === 'ps5' ? 'ps5' : p.toLowerCase() === 'xbox' ? 'xbox' : ''} px-3 py-1.5 text-xs font-bold rounded-lg hover:opacity-80 transition-opacity flex items-center gap-1.5`}>
+                                        {p === 'PC' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>}
+                                        {p === 'PS5' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8.985 2.596v17.548l3.915 1.261V6.688c0-.69.304-1.151.794-.991.636.181.76.814.76 1.505v5.876c2.441 1.193 4.362-.002 4.362-3.153 0-3.235-1.268-4.783-4.567-5.58-1.47-.355-3.544-.658-5.264-1.749z"/></svg>}
+                                        {p === 'Xbox' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M4.102 21.033A11.947 11.947 0 0 0 12 24a11.96 11.96 0 0 0 7.902-2.967c1.877-1.912-4.316-8.709-7.902-11.417-3.582 2.708-9.779 9.505-7.898 11.417z"/></svg>}
                                         {p}
-                                    </span>
+                                    </Link>
                                 ))}
                             </div>
                         )}
@@ -299,7 +302,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                             </li>
                             <li className="flex gap-3">
                                 <span className="font-semibold text-gray-900">Genre:</span>
-                                <span className="text-[#010101] capitalize">{product.category}</span>
+                                <Link href={`/shop?category=${product.category}`} className="text-[#010101] capitalize hover:text-[#ee626b] transition-colors font-medium">{product.category}</Link>
                             </li>
                             <li className="flex gap-3">
                                 <span className="font-semibold text-gray-900">Status:</span>
@@ -322,9 +325,9 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 <span className="font-semibold text-gray-900">Tags:</span>
                                 <div className="flex flex-wrap gap-2">
                                     {product.tags.map((tag) => (
-                                        <span key={tag} className="text-[#010101] hover:text-[#ee626b] cursor-pointer">
+                                        <Link key={tag} href={`/shop?tag=${encodeURIComponent(tag)}`} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full hover:bg-[#010101] hover:text-white transition-all">
                                             {tag}
-                                        </span>
+                                        </Link>
                                     ))}
                                 </div>
                             </li>

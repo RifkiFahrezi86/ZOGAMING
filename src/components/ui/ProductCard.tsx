@@ -77,9 +77,16 @@ export default function ProductCard({ product, showCategory = true }: ProductCar
             {/* Content */}
             <div className="p-4">
                 {showCategory && (
-                    <span className="inline-block px-3 py-0.5 text-[10px] font-semibold text-[#ee626b] bg-pink-50 rounded-full mb-2 capitalize">
-                        {product.category}
-                    </span>
+                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                        <span className="inline-block px-3 py-0.5 text-[10px] font-semibold text-[#ee626b] bg-pink-50 rounded-full capitalize">
+                            {product.category}
+                        </span>
+                        {product.platform && product.platform.map((p) => (
+                            <span key={p} className={`platform-badge ${p.toLowerCase() === 'pc' ? 'pc' : p.toLowerCase() === 'ps5' ? 'ps5' : p.toLowerCase() === 'xbox' ? 'xbox' : ''}`}>
+                                {p}
+                            </span>
+                        ))}
+                    </div>
                 )}
                 <h4 className="text-base font-bold text-gray-900 mb-1 line-clamp-1">
                     {product.name}
