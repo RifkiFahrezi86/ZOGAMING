@@ -69,13 +69,29 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ message: 'Order deleted' });
     }
 
-    // Customer can only cancel their own pending orders
+    // Customer can only manage their own orders
     const orderRows = await sql`SELECT * FROM orders WHERE id = ${orderId} AND user_id = ${user.userId}`;
     if (orderRows.length === 0) {
       return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
     }
 
     const order = orderRows[0];
+
+    // Check if customer wants to permanently delete (completed/cancelled orders)
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+
+    if (action === 'delete') {
+      // Customer can delete completed or cancelled orders to clean up
+      if (order.status !== 'complete' && order.status !== 'cancelled') {
+        return NextResponse.json({ error: 'Hanya pesanan selesai atau dibatalkan yang bisa dihapus' }, { status: 400 });
+      }
+      await sql`DELETE FROM order_items WHERE order_id = ${orderId}`;
+      await sql`DELETE FROM orders WHERE id = ${orderId}`;
+      return NextResponse.json({ message: 'Pesanan berhasil dihapus' });
+    }
+
+    // Default: cancel pending order
     if (order.status !== 'pending') {
       return NextResponse.json({ error: 'Hanya pesanan dengan status "Menunggu" yang bisa dibatalkan' }, { status: 400 });
     }
