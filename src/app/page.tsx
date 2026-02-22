@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ProductCard from '@/components/ui/ProductCard';
@@ -15,6 +16,8 @@ import { formatRupiah } from '@/lib/types';
 export default function HomePage() {
   const { products, categories, settings } = useData();
   const [activeBanner, setActiveBanner] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
 
   const trendingProducts = products.filter(p => p.trending).slice(0, 4);
   const mostPlayedProducts = products.filter(p => p.mostPlayed).slice(0, 6);
@@ -22,10 +25,10 @@ export default function HomePage() {
   const activeBanners = (settings.bannerImages || []).filter(v => v.active);
 
   const features = [
-    { icon: featureIcons.download, title: 'Free Storage' },
-    { icon: featureIcons.users, title: 'User More' },
-    { icon: featureIcons.play, title: 'Reply Ready' },
-    { icon: featureIcons.layout, title: 'Easy Layout' },
+    { icon: featureIcons.download, title: 'Akun Original' },
+    { icon: featureIcons.users, title: 'Steam Sharing' },
+    { icon: featureIcons.play, title: 'Proses Instan' },
+    { icon: featureIcons.layout, title: 'Garansi Resmi' },
   ];
 
   // Auto-rotate banners
@@ -78,17 +81,19 @@ export default function HomePage() {
               </p>
 
               {/* Search Form */}
-              <form className="relative max-w-md">
+              <form className="relative max-w-md" onSubmit={(e) => { e.preventDefault(); if (searchQuery.trim()) router.push(`/shop?q=${encodeURIComponent(searchQuery.trim())}`); }}>
                 <input
                   type="text"
-                  placeholder="Search for games..."
+                  placeholder="Cari game, genre, platform..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-14 pl-6 pr-36 rounded-full text-gray-700 outline-none bg-white shadow-xl"
                 />
                 <button
                   type="submit"
                   className="absolute right-0 top-0 h-14 px-6 bg-[#ee626b] text-white font-semibold rounded-full hover:bg-[#010101] transition-colors"
                 >
-                  Search Now
+                  Cari Game
                 </button>
               </form>
             </div>
@@ -184,7 +189,7 @@ export default function HomePage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-6">
-                      <p className="text-white/80 text-sm font-semibold uppercase tracking-wider mb-1">Featured Game</p>
+                      <p className="text-white/80 text-sm font-semibold uppercase tracking-wider mb-1">Game Unggulan</p>
                       <h3 className="text-white text-2xl font-bold mb-2">{featuredProducts[0].name}</h3>
                       <div className="flex items-center gap-3">
                         {featuredProducts[0].salePrice && (
@@ -238,10 +243,10 @@ export default function HomePage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12">
           <div className="section-heading mb-6 md:mb-0">
             <h6>Trending</h6>
-            <h2>Trending Games</h2>
+            <h2>Game Trending</h2>
           </div>
           <Link href="/shop" className="btn-primary">
-            View All
+            Lihat Semua
           </Link>
         </div>
 
@@ -253,7 +258,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="text-center py-12 text-gray-400">
-            <p>No trending games yet. Set games as &quot;Trending&quot; in the admin panel.</p>
+            <p>Belum ada game trending. Atur di panel admin.</p>
           </div>
         )}
       </section>
@@ -263,10 +268,10 @@ export default function HomePage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12">
           <div className="section-heading mb-6 md:mb-0">
             <h6>TOP GAMES</h6>
-            <h2>Most Played</h2>
+            <h2>Paling Banyak Dimainkan</h2>
           </div>
           <Link href="/shop" className="btn-primary">
-            View All
+            Lihat Semua
           </Link>
         </div>
 
@@ -307,7 +312,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="text-center py-12 text-gray-400">
-            <p>No most played games yet. Set games as &quot;Most Played&quot; in the admin panel.</p>
+            <p>Belum ada game populer. Atur di panel admin.</p>
           </div>
         )}
       </section>
@@ -315,8 +320,8 @@ export default function HomePage() {
       {/* Categories Section */}
       <section className="container mx-auto px-4 mt-28">
         <div className="section-heading text-center mb-12">
-          <h6>Categories</h6>
-          <h2>Top Categories</h2>
+          <h6>Kategori</h6>
+          <h2>Genre Populer</h2>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
@@ -326,52 +331,40 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section
-        className="relative bg-cover bg-center mt-28 py-20"
-        style={{ backgroundImage: 'url(/images/cta-bg.jpg)' }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#010101]/90 to-transparent" />
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Shop Promo */}
-            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-10 text-white">
-              <div className="section-heading">
-                <h6 className="!text-white">Our Shop</h6>
-                <h2 className="!text-white">
-                  Go Pre-Order Buy & Get Best <em className="!text-[#ee626b]">Prices</em> For You!
-                </h2>
-              </div>
-              <p className="mb-8 opacity-90">
-                Lorem ipsum dolor consectetur adipiscing, sed do eiusmod tempor incididunt.
-              </p>
-              <Link href="/shop" className="btn-secondary">
-                Shop Now
-              </Link>
+      {/* Why ZOGAMING Section */}
+      <section className="container mx-auto px-4 mt-28 mb-10">
+        <div className="section-heading text-center mb-12">
+          <h6>Why Us</h6>
+          <h2>Kenapa Beli di ZOGAMING?</h2>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-2xl p-6 shadow-md text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div className="w-14 h-14 mx-auto mb-4 bg-green-100 rounded-2xl flex items-center justify-center text-green-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-
-            {/* Newsletter */}
-            <div className="bg-[#ee626b]/90 backdrop-blur-md rounded-3xl p-10 text-white self-end">
-              <div className="section-heading">
-                <h6 className="!text-white">NEWSLETTER</h6>
-                <h2 className="!text-white text-2xl lg:text-3xl">
-                  Get Up To Rp 100.000 Off Just Buy <em className="!text-[#010101]">Subscribe</em> Newsletter!
-                </h2>
-              </div>
-              <form className="relative max-w-md mt-6">
-                <input
-                  type="email"
-                  placeholder="Your email..."
-                  className="w-full h-14 pl-6 pr-40 rounded-full text-gray-700 outline-none"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-0 top-0 h-14 px-5 bg-[#010101] text-white font-semibold rounded-full hover:bg-[#000000] transition-colors text-sm"
-                >
-                  Subscribe Now
-                </button>
-              </form>
+            <h4 className="font-bold text-gray-900 mb-2">Akun Resmi Steam</h4>
+            <p className="text-sm text-gray-500">Bukan crack! Semua akun game 100% resmi dari Steam.</p>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-md text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div className="w-14 h-14 mx-auto mb-4 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
+            <h4 className="font-bold text-gray-900 mb-2">Proses Cepat</h4>
+            <p className="text-sm text-gray-500">Akun dikirim langsung via WhatsApp setelah konfirmasi pembayaran.</p>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-md text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div className="w-14 h-14 mx-auto mb-4 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h4 className="font-bold text-gray-900 mb-2">Steam Sharing</h4>
+            <p className="text-sm text-gray-500">Satu akun bisa dipakai bersama. Hemat budget, game tetap ori!</p>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-md text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div className="w-14 h-14 mx-auto mb-4 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h4 className="font-bold text-gray-900 mb-2">Garansi Akun</h4>
+            <p className="text-sm text-gray-500">Ada masalah? Hubungi admin kami, siap bantu kapan saja.</p>
           </div>
         </div>
       </section>

@@ -28,9 +28,9 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                 <Header />
                 <div className="min-h-screen flex items-center justify-center">
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Game Tidak Ditemukan</h2>
                         <Link href="/shop" className="btn-primary">
-                            Back to Shop
+                            Kembali ke Shop
                         </Link>
                     </div>
                 </div>
@@ -193,7 +193,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                             <circle cx="20" cy="21" r="1" />
                                             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                                         </svg>
-                                        ADD TO CART
+                                        MASUKKAN KERANJANG
                                     </>
                                 )}
                             </button>
@@ -213,10 +213,23 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                             </Link>
                         </div>
 
+                        {/* Steam Sharing Trust Banner */}
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-green-800">Akun Resmi Steam Sharing</p>
+                                    <p className="text-xs text-green-600">Bukan crack &bull; Garansi akun &bull; Proses via WhatsApp</p>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Product Meta */}
                         <ul className="space-y-3 border-t border-gray-200 pt-6">
                             <li className="flex gap-3">
-                                <span className="font-semibold text-gray-900">Game ID:</span>
+                                <span className="font-semibold text-gray-900">ID Game:</span>
                                 <span className="text-gray-600 uppercase">{product.slug}</span>
                             </li>
                             <li className="flex gap-3">
@@ -276,7 +289,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
-                            Reviews (3)
+                            Ulasan (3)
                         </button>
                     </div>
                     <div className="p-8">
@@ -285,17 +298,17 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 <p>{product.description}</p>
                                 <br />
                                 <p>
-                                    Experience the ultimate gaming adventure with stunning graphics, immersive gameplay,
-                                    and an unforgettable story. This game offers hours of entertainment with its rich
-                                    world, challenging missions, and multiplayer modes.
+                                    Nikmati pengalaman gaming terbaik dengan grafis memukau dan gameplay yang imersif.
+                                    Game ini adalah akun resmi Steam Sharing — bukan crack! Anda bisa langsung main
+                                    setelah menerima akun via WhatsApp.
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-6">
                                 {[
-                                    { name: 'John Doe', rating: 5, comment: 'Amazing game! Highly recommended.' },
-                                    { name: 'Jane Smith', rating: 4, comment: 'Great graphics and storyline.' },
-                                    { name: 'Bob Wilson', rating: 5, comment: 'Best game I have ever played!' },
+                                    { name: 'Andi Pratama', rating: 5, comment: 'Game original dan proses cepat. Mantap!' },
+                                    { name: 'Rina Sari', rating: 4, comment: 'Akun langsung dikirim, grafis bagus banget.' },
+                                    { name: 'Budi Setiawan', rating: 5, comment: 'Recommended banget, admin responsif!' },
                                 ].map((review, index) => (
                                     <div key={index} className="border-b border-gray-100 pb-6 last:border-0">
                                         <div className="flex items-center gap-2 mb-2">
@@ -317,10 +330,10 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12">
                         <div className="section-heading mb-6 md:mb-0">
                             <h6 className="capitalize">{product.category}</h6>
-                            <h2>Related Games</h2>
+                            <h2>Game Serupa</h2>
                         </div>
                         <Link href="/shop" className="btn-primary">
-                            View All
+                            Lihat Semua
                         </Link>
                     </div>
 

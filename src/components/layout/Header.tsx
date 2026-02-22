@@ -11,7 +11,6 @@ import { formatRupiah } from '@/lib/types';
 const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/shop', label: 'Shop' },
-    { href: '/contact', label: 'Contact' },
 ];
 
 export default function Header() {
@@ -80,9 +79,11 @@ export default function Header() {
                                                             Admin Panel
                                                         </Link>
                                                     )}
-                                                    <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                                        Pesanan Saya
-                                                    </Link>
+                                                    {user.role !== 'admin' && (
+                                                        <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                                            Pesanan Saya
+                                                        </Link>
+                                                    )}
                                                     <button onClick={() => { logout(); setShowUserMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
                                                         Logout
                                                     </button>
@@ -126,9 +127,11 @@ export default function Header() {
                             <li className="border-t border-gray-100">
                                 {user ? (
                                     <>
-                                        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-sm font-medium text-[#ee626b] hover:bg-red-50">Pesanan Saya</Link>
+                                        {user.role !== 'admin' && (
+                                            <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-sm font-medium text-[#ee626b] hover:bg-red-50">Pesanan Saya</Link>
+                                        )}
                                         {user.role === 'admin' && (
-                                            <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-sm font-medium text-purple-600 hover:bg-purple-50 border-t border-gray-100">Admin Dashboard</Link>
+                                            <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-sm font-medium text-purple-600 hover:bg-purple-50">Admin Dashboard</Link>
                                         )}
                                         <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="block w-full text-left px-6 py-4 text-sm font-medium text-red-500 hover:bg-red-50 border-t border-gray-100">Logout</button>
                                     </>
@@ -147,7 +150,7 @@ export default function Header() {
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsCartOpen(false)} />
                     <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-in-right">
                         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                            <h3 className="text-xl font-bold text-gray-900">Shopping Cart ({cartCount})</h3>
+                            <h3 className="text-xl font-bold text-gray-900">Keranjang ({cartCount})</h3>
                             <button onClick={() => setIsCartOpen(false)} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             </button>
@@ -156,8 +159,8 @@ export default function Header() {
                             {cart.length === 0 ? (
                                 <div className="text-center py-12">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" className="mx-auto mb-4"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                                    <p className="text-gray-400 mb-1">Your cart is empty</p>
-                                    <button onClick={() => { setIsCartOpen(false); router.push('/shop'); }} className="mt-3 text-[#ee626b] font-semibold hover:underline">Browse Shop →</button>
+                                    <p className="text-gray-400 mb-1">Keranjang kosong</p>
+                                    <button onClick={() => { setIsCartOpen(false); router.push('/shop'); }} className="mt-3 text-[#ee626b] font-semibold hover:underline">Cari Game →</button>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
