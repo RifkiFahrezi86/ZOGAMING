@@ -19,8 +19,15 @@ export default function AdminCategoriesPage() {
         description: '',
     });
 
-    const getCategoryProductCount = (slug: string) =>
-        products.filter((p) => p.category.toLowerCase() === slug.toLowerCase()).length;
+    const getCategoryProductCount = (slug: string) => {
+        const slugLower = slug.toLowerCase();
+        const catName = categories.find(c => c.slug.toLowerCase() === slugLower)?.name?.toLowerCase() || slugLower;
+        return products.filter((p) =>
+            p.category.toLowerCase() === slugLower ||
+            p.category.toLowerCase() === catName ||
+            (p.tags || []).some(t => t.toLowerCase() === slugLower || t.toLowerCase() === catName)
+        ).length;
+    };
 
     const handleImageUrl = async (url: string) => {
         setImageUrlInput(url);

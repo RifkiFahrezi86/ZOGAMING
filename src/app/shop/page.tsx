@@ -60,10 +60,17 @@ function ShopContent() {
     const filteredProducts = useMemo(() => {
         let result = products;
 
-        // Category filter (case-insensitive to handle name vs slug mismatch)
+        // Category filter: matches by category field OR by tags
+        // This ensures products tagged with "RPG" appear under RPG genre even if their primary category is different
         if (activeCategory !== 'all') {
             const catLower = activeCategory.toLowerCase();
-            result = result.filter((p) => p.category.toLowerCase() === catLower);
+            // Find the category name from the categories list for tag matching
+            const catName = categories.find(c => c.slug.toLowerCase() === catLower)?.name?.toLowerCase() || catLower;
+            result = result.filter((p) =>
+                p.category.toLowerCase() === catLower ||
+                p.category.toLowerCase() === catName ||
+                (p.tags || []).some(t => t.toLowerCase() === catLower || t.toLowerCase() === catName)
+            );
         }
 
         // Platform filter
@@ -256,8 +263,8 @@ function ShopContent() {
                                             key={option.value}
                                             onClick={() => { setSortBy(option.value); setIsSortOpen(false); }}
                                             className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${sortBy === option.value
-                                                    ? 'bg-[#010101] text-white font-semibold'
-                                                    : 'text-gray-600 hover:bg-gray-50 font-medium'
+                                                ? 'bg-[#010101] text-white font-semibold'
+                                                : 'text-gray-600 hover:bg-gray-50 font-medium'
                                                 }`}
                                         >
                                             {sortBy === option.value && (
