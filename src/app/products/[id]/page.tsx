@@ -452,17 +452,28 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                     </div>
                                 )}
 
-                                {/* Login prompt */}
+                                {/* Login prompt - Jadilah customer */}
                                 {!user && (
-                                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-gray-600 text-sm">
-                                        <Link href="/login" className="text-[#ee626b] font-semibold hover:underline">Login</Link> untuk memberikan ulasan. Hanya customer yang sudah membeli game ini yang bisa mengulas.
+                                    <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-2xl p-5 text-center">
+                                        <div className="w-12 h-12 bg-[#ee626b]/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ee626b" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                        </div>
+                                        <p className="font-semibold text-gray-900 mb-1">Jadilah Customer untuk Memberikan Ulasan!</p>
+                                        <p className="text-sm text-gray-500 mb-3">Beli game ini dan bagikan pengalaman gaming kamu 🎮</p>
+                                        <Link href="/login" className="inline-flex items-center gap-2 px-5 py-2 bg-[#ee626b] text-white text-sm font-semibold rounded-full hover:bg-[#d4555d] transition-colors">
+                                            Login / Daftar Sekarang
+                                        </Link>
                                     </div>
                                 )}
 
                                 {/* Customer logged in but hasn't purchased */}
                                 {user && user.role === 'customer' && !canReview && !hasReviewed && (
-                                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-yellow-800 text-sm">
-                                        Anda harus membeli game ini terlebih dahulu sebelum bisa memberikan ulasan.
+                                    <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-5 text-center">
+                                        <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                                        </div>
+                                        <p className="font-semibold text-yellow-800 mb-1">Beli Game Ini Dulu Yuk!</p>
+                                        <p className="text-sm text-yellow-700">Kamu harus membeli dan menyelesaikan pesanan game ini sebelum bisa memberikan ulasan 🛒</p>
                                     </div>
                                 )}
 

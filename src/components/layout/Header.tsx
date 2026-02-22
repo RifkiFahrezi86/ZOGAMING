@@ -44,10 +44,21 @@ export default function Header() {
                     <nav className="flex items-center justify-between">
                         <Link href="/" className="flex-shrink-0">
                             <svg width={showDarkHeader ? 140 : 170} height={showDarkHeader ? 28 : 34} viewBox="0 0 250 50" fill="none" xmlns="http://www.w3.org/2000/svg" className="transition-all duration-300">
-                                <path d="M25 2 L46 23 L25 23 Z" fill="#EE626B"/><path d="M25 2 L4 23 L25 23 Z" fill="#EE626B"/>
-                                <path d="M25 48 L46 27 L25 27 Z" fill="#EE626B"/><path d="M25 48 L4 27 L25 27 Z" fill="#EE626B"/>
-                                <path d="M2 25 L23 4 L23 25 Z" fill="white"/><path d="M2 25 L23 46 L23 25 Z" fill="white"/>
-                                <path d="M48 25 L27 4 L27 25 Z" fill="white"/><path d="M48 25 L27 46 L27 25 Z" fill="white"/>
+                                <defs>
+                                    <mask id="logo-x-gap">
+                                        <circle cx="25" cy="25" r="25" fill="white"/>
+                                        <path d="M0 0 L50 50" stroke="black" strokeWidth="6"/>
+                                        <path d="M50 0 L0 50" stroke="black" strokeWidth="6"/>
+                                    </mask>
+                                    <clipPath id="logo-circle-clip">
+                                        <circle cx="25" cy="25" r="23"/>
+                                    </clipPath>
+                                </defs>
+                                <g mask="url(#logo-x-gap)" clipPath="url(#logo-circle-clip)">
+                                    <circle cx="25" cy="25" r="25" fill="white"/>
+                                    <polygon points="25,25 0,0 50,0" fill="#EE626B"/>
+                                    <polygon points="25,25 0,50 50,50" fill="#EE626B"/>
+                                </g>
                                 <g fill="white" transform="translate(58, 12)">
                                     <path d="M0,0 L18,0 L18,5 L7,21 L18,21 L18,26 L0,26 L0,21 L11,5 L0,5 Z"/>
                                     <path d="M22,0 L38,0 Q42,0 42,4 L42,22 Q42,26 38,26 L26,26 Q22,26 22,22 L22,4 Q22,0 26,0 Z M28,5 L28,21 L36,21 L36,5 Z"/>
