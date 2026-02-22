@@ -80,11 +80,9 @@ export default function Header() {
                                                             Admin Panel
                                                         </Link>
                                                     )}
-                                                    {user.role !== 'admin' && (
-                                                        <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                                            Pesanan Saya
-                                                        </Link>
-                                                    )}
+                                                    <Link href="/dashboard" onClick={() => setShowUserMenu(false)} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                                        Pesanan Saya
+                                                    </Link>
                                                     <button onClick={() => { logout(); setShowUserMenu(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
                                                         Logout
                                                     </button>
@@ -128,11 +126,9 @@ export default function Header() {
                             <li className="border-t border-gray-100">
                                 {user ? (
                                     <>
-                                        {user.role !== 'admin' && (
-                                            <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-sm font-medium text-[#ee626b] hover:bg-red-50">Pesanan Saya</Link>
-                                        )}
+                                        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-sm font-medium text-[#ee626b] hover:bg-red-50">Pesanan Saya</Link>
                                         {user.role === 'admin' && (
-                                            <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-sm font-medium text-purple-600 hover:bg-purple-50">Admin Dashboard</Link>
+                                            <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-sm font-medium text-purple-600 hover:bg-purple-50 border-t border-gray-100">Admin Dashboard</Link>
                                         )}
                                         <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="block w-full text-left px-6 py-4 text-sm font-medium text-red-500 hover:bg-red-50 border-t border-gray-100">Logout</button>
                                     </>
