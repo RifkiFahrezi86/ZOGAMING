@@ -1,20 +1,34 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { encryptPassword } from '@/lib/crypto';
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/security';
 import productsData from '@/data/products.json';
 import categoriesData from '@/data/categories.json';
 import badgesData from '@/data/badges.json';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    // Rate limiting - very strict for seed
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`seed:${ip}`, RATE_LIMITS.seed);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Seed dibatasi. Coba lagi nanti.' }, { status: 429 });
+    }
+
     const sql = getDb();
 
+    // Ensure password_enc column exists
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_enc TEXT DEFAULT ''`;
+
     // 1. Create admin user (password: admin123)
-    const adminHash = await bcrypt.hash('admin123', 10);
+    const adminPassword = 'admin123';
+    const adminHash = await bcrypt.hash(adminPassword, 12);
+    const adminEnc = encryptPassword(adminPassword);
     await sql`
-      INSERT INTO users (name, email, password_hash, phone, role)
-      VALUES ('Admin', 'admin@zogaming.com', ${adminHash}, '', 'admin')
-      ON CONFLICT (email) DO NOTHING
+      INSERT INTO users (name, email, password_hash, password_enc, phone, role)
+      VALUES ('Admin', 'admin@zogaming.com', ${adminHash}, ${adminEnc}, '', 'admin')
+      ON CONFLICT (email) DO UPDATE SET password_enc = ${adminEnc}
     `;
 
     // 2. Seed categories

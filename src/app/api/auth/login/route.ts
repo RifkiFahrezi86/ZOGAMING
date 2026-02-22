@@ -2,10 +2,20 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { signToken } from '@/lib/auth';
+import { checkRateLimit, getClientIp, sanitizeEmail, RATE_LIMITS } from '@/lib/security';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    // Rate limiting
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`login:${ip}`, RATE_LIMITS.login);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Terlalu banyak percobaan login. Coba lagi dalam 1 menit.' }, { status: 429 });
+    }
+
+    const body = await request.json();
+    const email = sanitizeEmail(body.email || '');
+    const password = body.password || '';
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email dan password wajib diisi' }, { status: 400 });

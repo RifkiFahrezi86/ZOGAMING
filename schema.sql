@@ -9,10 +9,14 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
+  password_enc TEXT DEFAULT '',
   phone VARCHAR(50) DEFAULT '',
   role VARCHAR(20) DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Add password_enc column if table already exists
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_enc TEXT DEFAULT '';
 
 -- 2. Categories table
 CREATE TABLE IF NOT EXISTS categories (

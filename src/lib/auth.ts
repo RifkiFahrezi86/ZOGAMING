@@ -1,7 +1,12 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'zogaming-secret-key-2024-change-in-production');
+// IMPORTANT: Set JWT_SECRET in environment variables for production!
+const rawSecret = process.env.JWT_SECRET || 'zogaming-secret-key-2024-change-in-production';
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  console.error('WARNING: JWT_SECRET is not set! Using default secret is INSECURE in production.');
+}
+const JWT_SECRET = new TextEncoder().encode(rawSecret);
 
 export interface JWTPayload {
   userId: number;

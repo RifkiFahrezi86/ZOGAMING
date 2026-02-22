@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { encryptPassword } from '@/lib/crypto';
+import { checkRateLimit, getClientIp, sanitizeEmail, RATE_LIMITS } from '@/lib/security';
 
 function generateTempPassword(): string {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -14,7 +16,15 @@ function generateTempPassword(): string {
 // Forgot password - sends new temporary password via WhatsApp
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    // Rate limiting
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`forgot:${ip}`, RATE_LIMITS.forgotPassword);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Terlalu banyak percobaan. Coba lagi dalam 5 menit.' }, { status: 429 });
+    }
+
+    const body = await request.json();
+    const email = sanitizeEmail(body.email || '');
 
     if (!email) {
       return NextResponse.json({ error: 'Email wajib diisi' }, { status: 400 });
@@ -41,10 +51,11 @@ export async function POST(request: Request) {
 
     // Generate temp password
     const tempPassword = generateTempPassword();
-    const hash = await bcrypt.hash(tempPassword, 10);
+    const hash = await bcrypt.hash(tempPassword, 12);
+    const enc = encryptPassword(tempPassword);
 
     // Update password in database
-    await sql`UPDATE users SET password_hash = ${hash} WHERE id = ${user.id}`;
+    await sql`UPDATE users SET password_hash = ${hash}, password_enc = ${enc} WHERE id = ${user.id}`;
 
     // Send via WhatsApp using Fonnte
     const fonnteToken = process.env.FONNTE_TOKEN;

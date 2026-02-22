@@ -2,10 +2,19 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import { encryptPassword } from '@/lib/crypto';
+import { checkRateLimit, getClientIp, validatePassword, RATE_LIMITS } from '@/lib/security';
 
 // Change password for logged-in user (customer or admin)
 export async function PUT(request: Request) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`changepw:${ip}`, RATE_LIMITS.resetPassword);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Terlalu banyak percobaan. Coba lagi nanti.' }, { status: 429 });
+    }
+
     const user = await getAuthUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -17,8 +26,9 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Password lama dan baru wajib diisi' }, { status: 400 });
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'Password baru minimal 6 karakter' }, { status: 400 });
+    const pwCheck = validatePassword(newPassword);
+    if (!pwCheck.valid) {
+      return NextResponse.json({ error: pwCheck.error }, { status: 400 });
     }
 
     const sql = getDb();
@@ -35,9 +45,10 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Password lama salah' }, { status: 400 });
     }
 
-    // Hash new password and update
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await sql`UPDATE users SET password_hash = ${newHash} WHERE id = ${user.userId}`;
+    // Hash new password + encrypt for admin viewing
+    const newHash = await bcrypt.hash(newPassword, 12);
+    const newEnc = encryptPassword(newPassword);
+    await sql`UPDATE users SET password_hash = ${newHash}, password_enc = ${newEnc} WHERE id = ${user.userId}`;
 
     return NextResponse.json({ message: 'Password berhasil diubah' });
   } catch (error) {

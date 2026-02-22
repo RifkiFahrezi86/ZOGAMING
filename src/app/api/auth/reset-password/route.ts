@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import { encryptPassword } from '@/lib/crypto';
+import { validatePassword, sanitizeId } from '@/lib/security';
 
 // Admin reset password for any user
 export async function PUT(request: Request) {
@@ -17,21 +19,28 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'User ID dan password baru wajib diisi' }, { status: 400 });
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'Password baru minimal 6 karakter' }, { status: 400 });
+    const safeUserId = sanitizeId(userId);
+    if (!safeUserId) {
+      return NextResponse.json({ error: 'User ID tidak valid' }, { status: 400 });
+    }
+
+    const pwCheck = validatePassword(newPassword);
+    if (!pwCheck.valid) {
+      return NextResponse.json({ error: pwCheck.error }, { status: 400 });
     }
 
     const sql = getDb();
 
     // Check user exists
-    const users = await sql`SELECT id, name, email FROM users WHERE id = ${userId}`;
+    const users = await sql`SELECT id, name, email FROM users WHERE id = ${safeUserId}`;
     if (users.length === 0) {
       return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 });
     }
 
-    // Hash and update
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await sql`UPDATE users SET password_hash = ${newHash} WHERE id = ${userId}`;
+    // Hash + encrypt and update
+    const newHash = await bcrypt.hash(newPassword, 12);
+    const newEnc = encryptPassword(newPassword);
+    await sql`UPDATE users SET password_hash = ${newHash}, password_enc = ${newEnc} WHERE id = ${safeUserId}`;
 
     return NextResponse.json({ 
       message: `Password untuk ${users[0].name} berhasil direset` 

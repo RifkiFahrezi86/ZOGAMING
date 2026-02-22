@@ -2,17 +2,35 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { signToken } from '@/lib/auth';
+import { encryptPassword } from '@/lib/crypto';
+import { checkRateLimit, getClientIp, sanitizeInput, sanitizeEmail, sanitizePhone, validatePassword, RATE_LIMITS } from '@/lib/security';
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password, phone } = await request.json();
+    // Rate limiting
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`register:${ip}`, RATE_LIMITS.register);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Terlalu banyak percobaan. Coba lagi nanti.' }, { status: 429 });
+    }
+
+    const body = await request.json();
+    const name = sanitizeInput(body.name || '');
+    const email = sanitizeEmail(body.email || '');
+    const password = body.password || '';
+    const phone = sanitizePhone(body.phone || '');
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Nama, email, dan password wajib diisi' }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password minimal 6 karakter' }, { status: 400 });
+    if (name.length > 255) {
+      return NextResponse.json({ error: 'Nama maksimal 255 karakter' }, { status: 400 });
+    }
+
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.valid) {
+      return NextResponse.json({ error: pwCheck.error }, { status: 400 });
     }
 
     const sql = getDb();
@@ -23,13 +41,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email sudah terdaftar' }, { status: 400 });
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    // Hash password + encrypt for admin viewing
+    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordEnc = encryptPassword(password);
 
     // Create user
     const result = await sql`
-      INSERT INTO users (name, email, password_hash, phone, role)
-      VALUES (${name}, ${email}, ${passwordHash}, ${phone || ''}, 'customer')
+      INSERT INTO users (name, email, password_hash, password_enc, phone, role)
+      VALUES (${name}, ${email}, ${passwordHash}, ${passwordEnc}, ${phone}, 'customer')
       RETURNING id, name, email, role
     `;
 

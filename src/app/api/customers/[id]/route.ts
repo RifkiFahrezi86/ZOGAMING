@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
+import { sanitizeInput, sanitizeEmail, sanitizePhone, sanitizeId } from '@/lib/security';
 
 // GET customer detail with their orders
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -11,10 +12,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const { id } = await params;
+    const safeId = sanitizeId(id);
+    if (!safeId) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    }
     const sql = getDb();
 
     // Get customer info
-    const customerRows = await sql`SELECT id, name, email, phone, created_at FROM users WHERE id = ${parseInt(id)} AND role = 'customer'`;
+    const customerRows = await sql`SELECT id, name, email, phone, created_at FROM users WHERE id = ${safeId} AND role = 'customer'`;
     if (customerRows.length === 0) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
@@ -22,7 +27,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const customer = customerRows[0];
 
     // Get all orders for this customer
-    const orders = await sql`SELECT * FROM orders WHERE user_id = ${parseInt(id)} ORDER BY created_at DESC`;
+    const orders = await sql`SELECT * FROM orders WHERE user_id = ${safeId} ORDER BY created_at DESC`;
 
     const ordersWithItems = await Promise.all(
       orders.map(async (order: Record<string, unknown>) => {
@@ -73,16 +78,27 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await request.json();
-    const { name, email, phone } = body;
+    const name = sanitizeInput(body.name || '');
+    const email = body.email ? sanitizeEmail(body.email) : null;
+    const phone = sanitizePhone(body.phone || '');
 
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    if (!name || name.length === 0) {
       return NextResponse.json({ error: 'Nama tidak boleh kosong' }, { status: 400 });
+    }
+
+    if (name.length > 255) {
+      return NextResponse.json({ error: 'Nama maksimal 255 karakter' }, { status: 400 });
+    }
+
+    const safeId2 = sanitizeId(id);
+    if (!safeId2) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
     }
 
     const sql = getDb();
 
     // Verify customer exists
-    const customerRows = await sql`SELECT id, role FROM users WHERE id = ${parseInt(id)}`;
+    const customerRows = await sql`SELECT id, role FROM users WHERE id = ${safeId2}`;
     if (customerRows.length === 0) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
@@ -91,14 +107,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // Check email uniqueness if changed
-    if (email && typeof email === 'string' && email.trim().length > 0) {
-      const existing = await sql`SELECT id FROM users WHERE email = ${email.trim()} AND id != ${parseInt(id)}`;
+    if (email && email.length > 0) {
+      const existing = await sql`SELECT id FROM users WHERE email = ${email} AND id != ${safeId2}`;
       if (existing.length > 0) {
         return NextResponse.json({ error: 'Email sudah digunakan oleh akun lain' }, { status: 400 });
       }
-      await sql`UPDATE users SET name = ${name.trim()}, email = ${email.trim()}, phone = ${(phone || '').trim()} WHERE id = ${parseInt(id)}`;
+      await sql`UPDATE users SET name = ${name}, email = ${email}, phone = ${phone} WHERE id = ${safeId2}`;
     } else {
-      await sql`UPDATE users SET name = ${name.trim()}, phone = ${(phone || '').trim()} WHERE id = ${parseInt(id)}`;
+      await sql`UPDATE users SET name = ${name}, phone = ${phone} WHERE id = ${safeId2}`;
     }
 
     return NextResponse.json({ message: 'Customer updated successfully' });
@@ -117,10 +133,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     const { id } = await params;
+    const safeDelId = sanitizeId(id);
+    if (!safeDelId) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    }
     const sql = getDb();
 
     // Verify it's a customer account, not admin
-    const customerRows = await sql`SELECT id, role FROM users WHERE id = ${parseInt(id)}`;
+    const customerRows = await sql`SELECT id, role FROM users WHERE id = ${safeDelId}`;
     if (customerRows.length === 0) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
@@ -129,11 +149,13 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     // Delete all order items for this customer's orders
-    await sql`DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = ${parseInt(id)})`;
+    await sql`DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = ${safeDelId})`;
     // Delete all orders
-    await sql`DELETE FROM orders WHERE user_id = ${parseInt(id)}`;
+    await sql`DELETE FROM orders WHERE user_id = ${safeDelId}`;
+    // Delete reviews
+    await sql`DELETE FROM reviews WHERE user_id = ${safeDelId}`;
     // Delete the user
-    await sql`DELETE FROM users WHERE id = ${parseInt(id)}`;
+    await sql`DELETE FROM users WHERE id = ${safeDelId}`;
 
     return NextResponse.json({ message: 'Customer deleted successfully' });
   } catch (error) {
