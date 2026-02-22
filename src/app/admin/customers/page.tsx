@@ -63,6 +63,11 @@ export default function AdminCustomersPage() {
   const [resetNewPassword, setResetNewPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
+  const [editCustomerId, setEditCustomerId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editMessage, setEditMessage] = useState('');
 
   const resetTargetName = resetPasswordId !== null
     ? (customers.find(c => c.id === resetPasswordId)?.name ?? selectedCustomer?.name ?? 'Customer')
@@ -112,6 +117,43 @@ export default function AdminCustomersPage() {
       }
     } catch {
       alert('Gagal menghapus customer');
+    }
+  };
+
+  const openEditCustomer = (customer: Customer | CustomerDetail) => {
+    setEditCustomerId(customer.id);
+    setEditName(customer.name);
+    setEditPhone(customer.phone || '');
+    setEditMessage('');
+  };
+
+  const handleEditCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCustomerId || !editName.trim()) return;
+    setEditLoading(true);
+    setEditMessage('');
+    try {
+      const res = await fetch(`/api/customers/${editCustomerId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName.trim(), phone: editPhone.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEditMessage('Berhasil diperbarui!');
+        // Update local state
+        setCustomers(prev => prev.map(c => c.id === editCustomerId ? { ...c, name: editName.trim(), phone: editPhone.trim() } : c));
+        if (selectedCustomer?.id === editCustomerId) {
+          setSelectedCustomer({ ...selectedCustomer, name: editName.trim(), phone: editPhone.trim() });
+        }
+        setTimeout(() => { setEditCustomerId(null); setEditMessage(''); }, 1500);
+      } else {
+        setEditMessage(data.error || 'Gagal memperbarui');
+      }
+    } catch {
+      setEditMessage('Terjadi kesalahan jaringan');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -203,6 +245,12 @@ export default function AdminCustomersPage() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs text-slate-500">Bergabung: {formatDate(selectedCustomer.createdAt)}</span>
+              <button
+                onClick={() => openEditCustomer(selectedCustomer)}
+                className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl text-sm font-medium transition-colors"
+              >
+                Edit Nama
+              </button>
               <button
                 onClick={() => { setResetPasswordId(selectedCustomer.id); setResetNewPassword(''); setResetMessage(''); }}
                 className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-sm font-medium transition-colors"
@@ -416,6 +464,13 @@ export default function AdminCustomersPage() {
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                         <button
+                          onClick={() => openEditCustomer(customer)}
+                          className="p-2 rounded-lg hover:bg-blue-500/10 text-slate-400 hover:text-blue-400 transition-colors"
+                          title="Edit Nama"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button
                           onClick={() => { setResetPasswordId(customer.id); setResetNewPassword(''); setResetMessage(''); }}
                           className="p-2 rounded-lg hover:bg-amber-500/10 text-slate-400 hover:text-amber-400 transition-colors"
                           title="Reset Password"
@@ -458,6 +513,12 @@ export default function AdminCustomersPage() {
                       className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <button
+                      onClick={() => openEditCustomer(customer)}
+                      className="p-2 rounded-lg hover:bg-blue-500/10 text-slate-400 hover:text-blue-400 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
                     <button
                       onClick={() => deleteCustomer(customer.id, customer.name)}
@@ -518,6 +579,40 @@ export default function AdminCustomersPage() {
               </div>
               <button type="submit" disabled={resetLoading} className="w-full h-11 bg-amber-500 text-white font-semibold rounded-xl hover:bg-amber-600 transition-colors disabled:opacity-50">
                 {resetLoading ? 'Memproses...' : 'Reset Password'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Customer Modal */}
+      {editCustomerId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setEditCustomerId(null); setEditMessage(''); }} />
+          <div className="relative bg-[#1e293b] rounded-2xl p-6 shadow-2xl w-full max-w-sm border border-slate-700/50">
+            <button onClick={() => { setEditCustomerId(null); setEditMessage(''); }} className="absolute top-3 right-3 p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <h3 className="text-lg font-bold text-white mb-1">Edit Customer</h3>
+            <p className="text-slate-400 text-sm mb-4">Ubah nama dan data customer</p>
+
+            {editMessage && (
+              <div className={`mb-4 p-3 rounded-xl text-sm ${editMessage.includes('Berhasil') ? 'bg-green-500/10 border border-green-500/30 text-green-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                {editMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleEditCustomer} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Nama</label>
+                <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nama customer" className="w-full h-11 px-4 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-[#ee626b] focus:outline-none" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">No. WhatsApp</label>
+                <input type="text" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="08xxxxxxxxxx" className="w-full h-11 px-4 bg-slate-800 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:border-[#ee626b] focus:outline-none" />
+              </div>
+              <button type="submit" disabled={editLoading} className="w-full h-11 bg-blue-500 text-white font-semibold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50">
+                {editLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
               </button>
             </form>
           </div>

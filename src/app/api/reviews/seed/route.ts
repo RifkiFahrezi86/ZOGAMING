@@ -170,6 +170,10 @@ export async function POST() {
       )
     `;
 
+    // Delete old reviews from fake users & remove old fake users
+    await sql`DELETE FROM reviews WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@zogaming.fake')`;
+    await sql`DELETE FROM users WHERE email LIKE '%@zogaming.fake'`;
+
     // Create fake reviewer users
     const defaultHash = await bcrypt.hash('reviewer123', 10);
     const userIds: number[] = [];

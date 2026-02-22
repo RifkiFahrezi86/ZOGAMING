@@ -63,6 +63,47 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
+// PUT update customer name
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const user = await getAuthUser();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+    const { name, phone } = body;
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json({ error: 'Nama tidak boleh kosong' }, { status: 400 });
+    }
+
+    const sql = getDb();
+
+    // Verify customer exists
+    const customerRows = await sql`SELECT id, role FROM users WHERE id = ${parseInt(id)}`;
+    if (customerRows.length === 0) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
+    if (customerRows[0].role === 'admin') {
+      return NextResponse.json({ error: 'Cannot edit admin account from here' }, { status: 403 });
+    }
+
+    // Update name (and phone if provided)
+    if (phone !== undefined) {
+      await sql`UPDATE users SET name = ${name.trim()}, phone = ${phone.trim()} WHERE id = ${parseInt(id)}`;
+    } else {
+      await sql`UPDATE users SET name = ${name.trim()} WHERE id = ${parseInt(id)}`;
+    }
+
+    return NextResponse.json({ message: 'Customer updated successfully' });
+  } catch (error) {
+    console.error('PUT customer error:', error);
+    return NextResponse.json({ error: 'Failed to update customer' }, { status: 500 });
+  }
+}
+
 // DELETE customer
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
