@@ -33,7 +33,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
 
     const product = products.find((p) => p.id === resolvedParams.id);
     const relatedProducts = products
-        .filter((p) => p.category === product?.category && p.id !== product?.id)
+        .filter((p) => p.category.toLowerCase() === product?.category.toLowerCase() && p.id !== product?.id)
         .slice(0, 4);
 
     if (!product) {
@@ -159,7 +159,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                             )}
                             {/* Download count */}
                             <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                                 {formatDownloads(product.downloads || 0)}
                             </div>
                             {/* Status overlays */}
@@ -202,7 +202,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
 
                         {/* Download count */}
                         <div className="flex items-center gap-2 mb-4 text-gray-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                             <span className="text-sm font-semibold">{formatDownloads(product.downloads || 0)} Downloads</span>
                         </div>
 
@@ -211,9 +211,9 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {product.platform.map((p) => (
                                     <Link key={p} href={`/shop?platform=${encodeURIComponent(p)}`} className={`platform-badge ${p.toLowerCase() === 'pc' ? 'pc' : p.toLowerCase() === 'ps5' ? 'ps5' : p.toLowerCase() === 'xbox' ? 'xbox' : ''} px-3 py-1.5 text-xs font-bold rounded-lg hover:opacity-80 transition-opacity flex items-center gap-1.5`}>
-                                        {p === 'PC' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>}
-                                        {p === 'PS5' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8.985 2.596v17.548l3.915 1.261V6.688c0-.69.304-1.151.794-.991.636.181.76.814.76 1.505v5.876c2.441 1.193 4.362-.002 4.362-3.153 0-3.235-1.268-4.783-4.567-5.58-1.47-.355-3.544-.658-5.264-1.749z"/></svg>}
-                                        {p === 'Xbox' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M4.102 21.033A11.947 11.947 0 0 0 12 24a11.96 11.96 0 0 0 7.902-2.967c1.877-1.912-4.316-8.709-7.902-11.417-3.582 2.708-9.779 9.505-7.898 11.417z"/></svg>}
+                                        {p === 'PC' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>}
+                                        {p === 'PS5' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8.985 2.596v17.548l3.915 1.261V6.688c0-.69.304-1.151.794-.991.636.181.76.814.76 1.505v5.876c2.441 1.193 4.362-.002 4.362-3.153 0-3.235-1.268-4.783-4.567-5.58-1.47-.355-3.544-.658-5.264-1.749z" /></svg>}
+                                        {p === 'Xbox' && <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M4.102 21.033A11.947 11.947 0 0 0 12 24a11.96 11.96 0 0 0 7.902-2.967c1.877-1.912-4.316-8.709-7.902-11.417-3.582 2.708-9.779 9.505-7.898 11.417z" /></svg>}
                                         {p}
                                     </Link>
                                 ))}
@@ -241,11 +241,10 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                             </div>
                             <button
                                 onClick={handleAddToCart}
-                                className={`flex-1 h-12 font-semibold rounded-full transition-all duration-300 flex items-center justify-center gap-3 ${
-                                    addedToCart
+                                className={`flex-1 h-12 font-semibold rounded-full transition-all duration-300 flex items-center justify-center gap-3 ${addedToCart
                                         ? 'bg-green-500 text-white'
                                         : 'bg-[#010101] text-white hover:bg-[#ee626b]'
-                                }`}
+                                    }`}
                             >
                                 {addedToCart ? (
                                     <>
@@ -285,7 +284,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                         <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-4 mb-6">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                                 </div>
                                 <div>
                                     <p className="text-sm font-bold text-green-800">Akun Resmi Steam Sharing</p>
@@ -388,7 +387,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 {user && canReview && !hasReviewed && !reviewSuccess && (
                                     <form onSubmit={handleSubmitReview} className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
                                         <h4 className="font-semibold text-gray-900 mb-4">Tulis Ulasan Anda</h4>
-                                        
+
                                         {/* Star Rating Selector */}
                                         <div className="mb-4">
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
@@ -443,7 +442,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 {/* Success message */}
                                 {reviewSuccess && (
                                     <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-green-800 flex items-center gap-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
                                         Terima kasih! Ulasan Anda berhasil dikirim.
                                     </div>
                                 )}
@@ -459,7 +458,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 {!user && (
                                     <div className="bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-200 rounded-2xl p-5 text-center">
                                         <div className="w-12 h-12 bg-[#ee626b]/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ee626b" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ee626b" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                                         </div>
                                         <p className="font-semibold text-gray-900 mb-1">Jadilah Customer untuk Memberikan Ulasan!</p>
                                         <p className="text-sm text-gray-500 mb-3">Beli game ini dan bagikan pengalaman gaming kamu 🎮</p>
@@ -473,7 +472,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 {user && user.role === 'customer' && !canReview && !hasReviewed && (
                                     <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-5 text-center">
                                         <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>
                                         </div>
                                         <p className="font-semibold text-yellow-800 mb-1">Beli Game Ini Dulu Yuk!</p>
                                         <p className="text-sm text-yellow-700">Kamu harus membeli dan menyelesaikan pesanan game ini sebelum bisa memberikan ulasan 🛒</p>
@@ -502,7 +501,7 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                 ) : (
                                     <div className="text-center py-8 text-gray-400">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-50">
-                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                         </svg>
                                         <p className="font-medium">Belum ada ulasan</p>
                                         <p className="text-sm mt-1">Jadilah yang pertama mengulas game ini!</p>
