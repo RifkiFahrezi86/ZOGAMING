@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { encryptPassword } from '@/lib/crypto';
 import { checkRateLimit, getClientIp, sanitizeEmail, RATE_LIMITS } from '@/lib/security';
 import { randomBytes } from 'crypto';
 
@@ -55,8 +54,6 @@ export async function POST(request: Request) {
     // Generate temp password
     const tempPassword = generateTempPassword();
     const hash = await bcrypt.hash(tempPassword, 12);
-    let enc = '';
-    try { enc = encryptPassword(tempPassword); } catch { /* encryption optional */ }
 
     // Send via WhatsApp using Fonnte BEFORE updating the password
     const fonnteToken = process.env.FONNTE_TOKEN;
@@ -82,7 +79,7 @@ export async function POST(request: Request) {
     }
 
     // Update password in database (only after successful delivery)
-    await sql`UPDATE users SET password_hash = ${hash}${enc ? sql`, password_enc = ${enc}` : sql``} WHERE id = ${user.id}`;
+    await sql`UPDATE users SET password_hash = ${hash} WHERE id = ${user.id}`;
 
     return NextResponse.json({ 
       message: 'Password baru telah dikirim ke WhatsApp yang terdaftar.' 

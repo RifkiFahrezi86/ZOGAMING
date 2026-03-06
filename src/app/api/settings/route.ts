@@ -101,14 +101,20 @@ export async function PUT(request: Request) {
       }
     }
 
-    // Save banner images
+    // Save banner images (with sanitization)
     if (body.bannerImages) {
       await sql`DELETE FROM banner_images`;
       for (let i = 0; i < body.bannerImages.length; i++) {
         const b = body.bannerImages[i];
+        const bannerId = sanitizeString(String(b.id || ''), 100);
+        const bannerTitle = sanitizeString(String(b.title || ''), 255);
+        const bannerImageUrl = sanitizeString(String(b.imageUrl || ''), 500);
+        const bannerBadge = sanitizeString(String(b.badge || ''), 100);
+        const bannerBadgeColor = sanitizeString(String(b.badgeColor || '#ef4444'), 50);
+        const bannerBadgeTextColor = sanitizeString(String(b.badgeTextColor || '#fff'), 50);
         await sql`
           INSERT INTO banner_images (id, title, image_url, badge, badge_color, badge_text_color, active, sort_order)
-          VALUES (${b.id}, ${b.title || ''}, ${b.imageUrl || ''}, ${b.badge || ''}, ${b.badgeColor || '#ef4444'}, ${b.badgeTextColor || '#fff'}, ${b.active !== false}, ${i})
+          VALUES (${bannerId}, ${bannerTitle}, ${bannerImageUrl}, ${bannerBadge}, ${bannerBadgeColor}, ${bannerBadgeTextColor}, ${b.active !== false}, ${i})
         `;
       }
     }

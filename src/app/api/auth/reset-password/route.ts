@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
-import { encryptPassword } from '@/lib/crypto';
 import { validatePassword, sanitizeId } from '@/lib/security';
 
 // Admin reset password for any user
@@ -37,10 +36,9 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 });
     }
 
-    // Hash + encrypt and update
+    // Hash and update
     const newHash = await bcrypt.hash(newPassword, 12);
-    const newEnc = encryptPassword(newPassword);
-    await sql`UPDATE users SET password_hash = ${newHash}, password_enc = ${newEnc} WHERE id = ${safeUserId}`;
+    await sql`UPDATE users SET password_hash = ${newHash} WHERE id = ${safeUserId}`;
 
     return NextResponse.json({ 
       message: `Password untuk ${users[0].name} berhasil direset` 

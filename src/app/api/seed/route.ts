@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { encryptPassword } from '@/lib/crypto';
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/security';
 import { getAuthUser } from '@/lib/auth';
 import { randomBytes } from 'crypto';
@@ -44,17 +43,12 @@ export async function POST(request: Request) {
 
     const sql = getDb();
 
-    // Ensure password_enc column exists
-    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_enc TEXT DEFAULT ''`;
-
     // 1. Create admin user with cryptographically random password
     const adminPassword = randomBytes(12).toString('base64url').slice(0, 16);
     const adminHash = await bcrypt.hash(adminPassword, 12);
-    let adminEnc = '';
-    try { adminEnc = encryptPassword(adminPassword); } catch { /* encryption optional */ }
     await sql`
-      INSERT INTO users (name, email, password_hash, password_enc, phone, role)
-      VALUES ('Admin', 'admin@zogaming.com', ${adminHash}, ${adminEnc}, '', 'admin')
+      INSERT INTO users (name, email, password_hash, phone, role)
+      VALUES ('Admin', 'admin@zogaming.com', ${adminHash}, '', 'admin')
       ON CONFLICT (email) DO NOTHING
     `;
     // Store generated password to return once

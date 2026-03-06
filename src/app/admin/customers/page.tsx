@@ -69,9 +69,6 @@ export default function AdminCustomersPage() {
   const [editPhone, setEditPhone] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const [editMessage, setEditMessage] = useState('');
-  const [viewPasswordId, setViewPasswordId] = useState<number | null>(null);
-  const [viewPasswordData, setViewPasswordData] = useState<{ name: string; email: string; password: string } | null>(null);
-  const [viewPasswordLoading, setViewPasswordLoading] = useState(false);
 
   // Tambah Customer
   const [showAddCustomer, setShowAddCustomer] = useState(false);
@@ -202,25 +199,6 @@ export default function AdminCustomersPage() {
     }
   };
 
-  const handleViewPassword = async (userId: number) => {
-    setViewPasswordId(userId);
-    setViewPasswordData(null);
-    setViewPasswordLoading(true);
-    try {
-      const res = await fetch(`/api/admin/passwords?userId=${userId}`);
-      const data = await res.json();
-      if (res.ok) {
-        setViewPasswordData({ name: data.name, email: data.email, password: data.password });
-      } else {
-        setViewPasswordData({ name: '-', email: '-', password: data.error || 'Gagal mengambil password' });
-      }
-    } catch {
-      setViewPasswordData({ name: '-', email: '-', password: 'Gagal mengambil password' });
-    } finally {
-      setViewPasswordLoading(false);
-    }
-  };
-
   const handleAddCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addCustName.trim()) return;
@@ -342,12 +320,6 @@ export default function AdminCustomersPage() {
                 className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-sm font-medium transition-colors"
               >
                 Reset Password
-              </button>
-              <button
-                onClick={() => handleViewPassword(selectedCustomer.id)}
-                className="px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-xl text-sm font-medium transition-colors"
-              >
-                Lihat Password
               </button>
               <button
                 onClick={() => deleteCustomer(selectedCustomer.id, selectedCustomer.name)}
@@ -499,50 +471,6 @@ export default function AdminCustomersPage() {
         </div>
       )}
 
-      {/* View Password Modal */}
-      {viewPasswordId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setViewPasswordId(null); setViewPasswordData(null); }} />
-          <div className="relative bg-[#1e293b] rounded-2xl p-6 shadow-2xl w-full max-w-sm border border-slate-700/50">
-            <button onClick={() => { setViewPasswordId(null); setViewPasswordData(null); }} className="absolute top-3 right-3 p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">Lihat Password</h3>
-                <p className="text-slate-400 text-xs">Hanya admin yang dapat melihat</p>
-              </div>
-            </div>
-            {viewPasswordLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : viewPasswordData ? (
-              <div className="space-y-3">
-                <div className="bg-slate-800/50 rounded-xl p-3">
-                  <p className="text-xs text-slate-500 mb-1">Nama</p>
-                  <p className="text-white font-medium">{viewPasswordData.name}</p>
-                </div>
-                <div className="bg-slate-800/50 rounded-xl p-3">
-                  <p className="text-xs text-slate-500 mb-1">Email</p>
-                  <p className="text-white font-medium">{viewPasswordData.email}</p>
-                </div>
-                <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3">
-                  <p className="text-xs text-purple-400 mb-1">Password</p>
-                  <p className="text-white font-mono text-lg font-bold tracking-wider">{viewPasswordData.password}</p>
-                </div>
-                <p className="text-xs text-slate-500 text-center mt-2">
-                  Jika tertulis &quot;(tidak tersedia)&quot;, password dibuat sebelum fitur ini aktif.
-                  Gunakan Reset Password untuk memberi password baru.
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      )}
       </>
     );
   }

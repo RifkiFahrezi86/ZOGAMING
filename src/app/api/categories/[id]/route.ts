@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
-import { sanitizeString, sanitizeInput } from '@/lib/security';
+import { sanitizeString, sanitizeInput, sanitizeId } from '@/lib/security';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,6 +10,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id } = await params;
+    const safeId = sanitizeId(id);
+    if (!safeId) {
+      return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 });
+    }
     const body = await request.json();
     const sql = getDb();
     const name = sanitizeString(body.name, 255);
@@ -19,7 +23,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     await sql`
       UPDATE categories SET name = ${name}, slug = ${slug}, image = ${image}, description = ${description}
-      WHERE id = ${id}
+      WHERE id = ${safeId}
     `;
     return NextResponse.json({ message: 'Updated' });
   } catch (error) {
@@ -35,8 +39,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const { id } = await params;
+    const safeId = sanitizeId(id);
+    if (!safeId) {
+      return NextResponse.json({ error: 'Invalid category ID' }, { status: 400 });
+    }
     const sql = getDb();
-    await sql`DELETE FROM categories WHERE id = ${id}`;
+    await sql`DELETE FROM categories WHERE id = ${safeId}`;
     return NextResponse.json({ message: 'Deleted' });
   } catch (error) {
     console.error('DELETE category error:', error);

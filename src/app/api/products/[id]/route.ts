@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
-import { sanitizeInput, sanitizeString } from '@/lib/security';
+import { sanitizeInput, sanitizeString, sanitizeId } from '@/lib/security';
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -11,6 +11,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const { id } = await params;
+    const safeId = sanitizeId(id);
+    if (!safeId) {
+      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
+    }
     const body = await request.json();
     const sql = getDb();
     const name = sanitizeString(body.name, 255);
@@ -36,7 +40,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         rating = ${body.rating || 5},
         platform = ${body.platform || []},
         downloads = ${body.downloads || 0}
-      WHERE id = ${id}
+      WHERE id = ${safeId}
     `;
 
     return NextResponse.json({ message: 'Product updated' });
@@ -54,8 +58,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     const { id } = await params;
+    const safeId = sanitizeId(id);
+    if (!safeId) {
+      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
+    }
     const sql = getDb();
-    await sql`DELETE FROM products WHERE id = ${id}`;
+    await sql`DELETE FROM products WHERE id = ${safeId}`;
 
     return NextResponse.json({ message: 'Product deleted' });
   } catch (error) {

@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { signToken } from '@/lib/auth';
-import { encryptPassword } from '@/lib/crypto';
 import { checkRateLimit, getClientIp, sanitizeInput, sanitizeEmail, sanitizePhone, validatePassword, RATE_LIMITS } from '@/lib/security';
 
 export async function POST(request: Request) {
@@ -41,14 +40,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email sudah terdaftar' }, { status: 400 });
     }
 
-    // Hash password + encrypt for admin viewing
+    // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
-    const passwordEnc = encryptPassword(password);
 
     // Create user
     const result = await sql`
-      INSERT INTO users (name, email, password_hash, password_enc, phone, role)
-      VALUES (${name}, ${email}, ${passwordHash}, ${passwordEnc}, ${phone}, 'customer')
+      INSERT INTO users (name, email, password_hash, phone, role)
+      VALUES (${name}, ${email}, ${passwordHash}, ${phone}, 'customer')
       RETURNING id, name, email, role
     `;
 
