@@ -1,15 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { getAuthUser } from '@/lib/auth';
 
-// Protected endpoint: returns active admins list (requires auth)
+// Public endpoint: returns active admins list
 export async function GET() {
   try {
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const sql = getDb();
 
     // Ensure admins table exists
